@@ -307,31 +307,82 @@
         v.document.close();
     }
     function abrirConsolidadoWeb() {
-        actualizarMesActual();
-        let datosConsolidados = listaGrados.map(grado => {
-            let hG = JSON.parse(localStorage.getItem(`historial_${grado}_${mesActual}`)) || [];
-            let A = 0, T = 0, F = 0;
-            hG.forEach(r => Object.values(r.datos).forEach(e => { if(e==="A") A++; if(e==="T") T++; if(e==="F") F++; }));
-            return { grado, A, T, F };
-        });
-        
-        const v = window.open("", "_blank");
-        v.document.write(`<html><head><script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script></head><body>
-            <button onclick="window.print()">Imprimir</button>
-            <canvas id="c"></canvas>
-            <script>
-                const data = ${JSON.stringify(datosConsolidados)};
-                new Chart(document.getElementById('c'), {
-                    type: 'bar',
-                    data: { labels: data.map(d=>d.grado), datasets: [
-                        {label:'Asist', data: data.map(d=>d.A), backgroundColor:'green'},
-                        {label:'Tarde', data: data.map(d=>d.T), backgroundColor:'orange'},
-                        {label:'Falta', data: data.map(d=>d.F), backgroundColor:'red'}
-                    ]}
-                });
-            <\/script></body></html>`);
-        v.document.close();
-    }
+    actualizarMesActual();
+    let datosConsolidados = listaGrados.map(grado => {
+        let hG = JSON.parse(localStorage.getItem(`historial_${grado}_${mesActual}`)) || [];
+        let A = 0, T = 0, F = 0;
+        hG.forEach(r => Object.values(r.datos).forEach(e => { if(e==="A") A++; if(e==="T") T++; if(e==="F") F++; }));
+        return { grado, A, T, F };
+    });
+    
+    let docente = document.getElementById("consolidado-docente").value || "No especificado";
+    let area = document.getElementById("consolidado-area").value || "No especificado";
+
+    const v = window.open("", "_blank");
+    v.document.write(`<html><head>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"><\/script>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+            .titulo-bar { background: #1e3c72; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
+            table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+            th { padding: 15px; text-align: center; color: white; }
+            td { padding: 12px; text-align: center; border-bottom: 1px solid #ddd; }
+            .th-grado { background: #3c5a99; }
+            .th-asis { background: #28a745; }
+            .th-tard { background: #fd7e14; }
+            .th-falt { background: #dc3545; }
+            .total-row { font-weight: bold; background: #e9ecef; }
+            .chart-container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+            .btn-print { margin-bottom: 20px; padding: 10px 20px; cursor: pointer; }
+            @media print { .no-print { display: none; } }
+        </style>
+    </head><body>
+        <button class="no-print btn-print" onclick="window.print()">🖨️ Imprimir Reporte</button>
+        <div class="titulo-bar">
+            <h2>📊 CONSOLIDADO GENERAL DE ASISTENCIA</h2>
+            <p>INSTITUCIÓN: ${infoGeneral.colegio} | AÑO: ${infoGeneral.anio} | MES EVALUADO: ${mesActual}</p>
+            <p>DOCENTE: ${docente} | ÁREA / CURSO: ${area}</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th class="th-grado">GRADO Y SECCIÓN</th>
+                    <th class="th-asis">TOTAL ASISTENCIAS ( ✅ )</th>
+                    <th class="th-tard">TOTAL TARDANZAS ( ⏰ )</th>
+                    <th class="th-falt">TOTAL FALTAS ( ❌ )</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-body"></tbody>
+        </table>
+        <div class="chart-container"><canvas id="c"></canvas></div>
+
+        <script>
+            const data = ${JSON.stringify(datosConsolidados)};
+            const tbody = document.getElementById('tabla-body');
+            let totA=0, totT=0, totF=0;
+            
+            data.forEach(d => {
+                tbody.innerHTML += \`<tr><td>\${d.grado}</td><td>\${d.A}</td><td>\${d.T}</td><td>\${d.F}</td></tr>\`;
+                totA += d.A; totT += d.T; totF += d.F;
+            });
+            tbody.innerHTML += \`<tr class="total-row"><td>TOTAL GENERAL (I.E.P.)</td><td>\${totA}</td><td>\${totT}</td><td>\${totF}</td></tr>\`;
+
+            new Chart(document.getElementById('c'), {
+                type: 'bar',
+                data: { 
+                    labels: data.map(d=>d.grado), 
+                    datasets: [
+                        {label:'Asistencias (✅)', data: data.map(d=>d.A), backgroundColor:'#28a745'},
+                        {label:'Tardanzas (⏰)', data: data.map(d=>d.T), backgroundColor:'#fd7e14'},
+                        {label:'Faltas (❌)', data: data.map(d=>d.F), backgroundColor:'#dc3545'}
+                    ]
+                },
+                options: { responsive: true, plugins: { title: { display: true, text: 'Comparativa de Asistencia - Mes: ${mesActual}' } } }
+            });
+        <\/script>
+    </body></html>`);
+    v.document.close();
+}
 </script>
 </body>
 </html>
