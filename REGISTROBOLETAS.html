@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Boletas de Registro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: #4a90e2; color: white; padding: 12px; border: 1px solid #ddd; }
+        td { padding: 8px; border: 1px solid #ddd; text-align: center; }
+        input { width: 90%; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        .acciones { margin-top: 15px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; color: white; margin-right: 5px; }
+        .btn-add { background-color: #28a745; }
+        .btn-save { background-color: #ffc107; color: black; }
+        .btn-print { background-color: #007bff; }
+        .btn-eliminar { background-color: #dc3545; padding: 5px 10px; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+    <p align="center">
+        <img src="rosario.jpg" alt="Logo Colegio" width="920px">
+    </p>
+
+    <div class="container">
+        <h2>BOLETAS DE REGISTRO</h2>
+        <table id="tablaRegistro">
+            <thead>
+                <tr>
+                    <th>N°</th>
+                    <th>Centro de Servicio</th>
+                    <th>Fecha</th>
+                    <th>Objeto / Material</th>
+                    <th>Cantidad</th>
+                    <th>Valor</th>
+                    <th>Subtotal</th>
+                    <th>Observación</th>
+                    <th class="no-print">Acción</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" style="text-align: right; font-weight: bold;">TOTAL GENERAL:</td>
+                    <td id="totalGeneral" style="font-weight: bold;">0.00</td>
+                    <td></td>
+                    <td class="no-print"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="acciones no-print">
+            <button class="btn-add" onclick="agregarFila()">Añadir Fila</button>
+            <button class="btn-save" onclick="guardarDatos()">Guardar Datos</button>
+            <button class="btn-print" onclick="window.print()">Imprimir</button>
+        </div>
+    </div>
+
+    <script>
+        let contador = 1;
+
+        // Cargar datos al abrir la página
+        window.onload = function() {
+            const data = localStorage.getItem('misBoletas');
+            if (data) {
+                document.querySelector("#tablaRegistro tbody").innerHTML = data;
+                calcular();
+            }
+        };
+
+        function agregarFila() {
+            let tbody = document.querySelector("#tablaRegistro tbody");
+            let fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${contador++}</td>
+                <td><input type="text"></td>
+                <td><input type="date"></td>
+                <td><input type="text"></td>
+                <td><input type="number" class="cant" value="0" oninput="calcular()"></td>
+                <td><input type="number" class="valor" value="0" oninput="calcular()"></td>
+                <td class="subtotal">0.00</td>
+                <td><input type="text"></td>
+                <td class="no-print"><button class="btn-eliminar" onclick="eliminarFila(this)">X</button></td>
+            `;
+            tbody.appendChild(fila);
+        }
+
+        function guardarDatos() {
+            const contenido = document.querySelector("#tablaRegistro tbody").innerHTML;
+            localStorage.setItem('misBoletas', contenido);
+            alert("¡Datos guardados correctamente en este navegador!");
+        }
+
+        function calcular() {
+            let filas = document.querySelectorAll("#tablaRegistro tbody tr");
+            let totalGeneral = 0;
+            filas.forEach(fila => {
+                let cant = parseFloat(fila.querySelector(".cant").value) || 0;
+                let valor = parseFloat(fila.querySelector(".valor").value) || 0;
+                let subtotal = cant * valor;
+                fila.querySelector(".subtotal").innerText = subtotal.toFixed(2);
+                totalGeneral += subtotal;
+            });
+            document.getElementById("totalGeneral").innerText = totalGeneral.toFixed(2);
+        }
+
+        function eliminarFila(btn) {
+            btn.parentElement.parentElement.remove();
+            calcular();
+        }
+    </script>
+</body>
+</html>
