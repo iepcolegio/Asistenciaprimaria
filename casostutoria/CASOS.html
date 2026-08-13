@@ -1,0 +1,199 @@
+<!DO<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema de Gestión de Casos</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e67e22;
+            --bg-color: #f4f7f6;
+            --table-header: #2c3e50;
+            --save-color: #2980b9;
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg-color); color: #333; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h2 { color: var(--primary-color); border-bottom: 3px solid var(--secondary-color); padding-bottom: 10px; }
+
+        .input-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: #ebf5fb; padding: 15px; border-radius: 8px; }
+        input, select { padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; flex: 1; min-width: 150px; }
+        
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; color: white; font-weight: bold; transition: 0.3s; margin-top: 5px; }
+        .btn-agregar { background-color: var(--secondary-color); }
+        .btn-agregar:hover { background-color: #2980b9; }
+        
+        .btn-accion { background-color: var(--accent-color); }
+        .btn-accion:hover { background-color: #d35400; }
+        
+        .btn-imprimir { background-color: #27ae60; }
+        .btn-archivo { background-color: #8e44ad; }
+        .btn-guardar { background-color: #2980b9; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: var(--table-header); color: white; padding: 12px; }
+        td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        .btn-eliminar { background-color: #e74c3c; color: white; padding: 5px 10px; }
+        
+        #resumenContainer { margin-top: 20px; padding: 20px; background: #d5f5e3; border-left: 5px solid #27ae60; border-radius: 5px; font-weight: bold; }
+        
+        @media print {
+            .no-print { display: none; }
+            body { background: white; }
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body onload="cargarDatos()">
+     <p align="center">
+        <img src="rosario.jpg" alt="Logo Colegio" width="920px">
+    </p>
+
+    <div class="container">
+        <h2>Registro de Casos Estudiantiles</h2>
+        
+        <div class="input-group no-print">
+            <input type="text" id="estudiante" placeholder="Nombre del Estudiante">
+            <input type="text" id="padres" placeholder="Nombre de los Padres">
+            <select id="atendidoPor">
+                <option value="Psicología">Psicología</option>
+                <option value="Tutoría">Tutoría</option>
+            </select>
+            <input type="text" id="nombreAtendedor" placeholder="Nombre del Profesional">
+            <input type="text" id="condicion" placeholder="Condición">
+            <button class="btn-agregar" onclick="agregarCaso()">Agregar Caso</button>
+        </div>
+
+        <table id="tablaCasos">
+            <thead>
+                <tr>
+                    <th>Estudiante</th>
+                    <th>Padres</th>
+                    <th>Área</th>
+                    <th>Atendido por</th>
+                    <th>Condición</th>
+                    <th class="no-print">Acción</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="no-print" style="margin-top:20px;">
+            <button class="btn-guardar" onclick="guardarLocalmente()">💾 Guardar Cambios</button>
+            <button class="btn-accion" onclick="mostrarResumen()">Ver Resumen</button>
+            <button class="btn-archivo" onclick="exportarJSON()">Exportar</button>
+            <button class="btn-archivo" onclick="document.getElementById('fileInput').click()">Importar</button>
+            <input type="file" id="fileInput" style="display:none" onchange="importarJSON(this.files)">
+            <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
+        </div>
+
+        <div id="resumenContainer" style="display:none;"></div>
+    </div>
+
+    <script>
+        function agregarCaso(est=null, pad=null, area=null, quien=null, con=null) {
+            let e = est || document.getElementById('estudiante').value;
+            let p = pad || document.getElementById('padres').value;
+            let a = area || document.getElementById('atendidoPor').value;
+            let q = quien || document.getElementById('nombreAtendedor').value;
+            let c = con || document.getElementById('condicion').value;
+
+            if(!e || !p || !q || !c) {
+                alert("Por favor, rellene todos los campos.");
+                return;
+            }
+
+            let tabla = document.getElementById('tablaCasos').getElementsByTagName('tbody')[0];
+            let fila = tabla.insertRow();
+            fila.innerHTML = `<td>${e}</td><td>${p}</td><td>${a}</td><td>${q}</td><td>${c}</td>
+                             <td class="no-print"><button class="btn-eliminar" onclick="this.parentElement.parentElement.remove()">Eliminar</button></td>`;
+            
+            document.getElementById('estudiante').value = '';
+            document.getElementById('padres').value = '';
+            document.getElementById('nombreAtendedor').value = '';
+            document.getElementById('condicion').value = '';
+        }
+
+        function guardarLocalmente() {
+            let data = [];
+            document.querySelectorAll('#tablaCasos tbody tr').forEach(f => {
+                data.push({ 
+                    est: f.cells[0].innerText, 
+                    pad: f.cells[1].innerText, 
+                    area: f.cells[2].innerText,
+                    quien: f.cells[3].innerText,
+                    con: f.cells[4].innerText 
+                });
+            });
+            localStorage.setItem('casosGuardados', JSON.stringify(data));
+            alert("¡Datos guardados correctamente!");
+        }
+
+        function cargarDatos() {
+            let rawData = localStorage.getItem('casosGuardados');
+            if(rawData) {
+                let datos = JSON.parse(rawData);
+                datos.forEach(item => agregarCaso(item.est, item.pad, item.area, item.quien, item.con));
+            }
+        }
+
+       function mostrarResumen() {
+    let filas = document.querySelectorAll('#tablaCasos tbody tr');
+    let total = filas.length;
+    let resumen = {
+        Psicologia: 0,
+        Tutoria: 0,
+        profesionales: new Set() // Usamos un Set para no repetir nombres
+    };
+
+    filas.forEach(f => {
+        let area = f.cells[2].innerText; // Área
+        let quien = f.cells[3].innerText; // Nombre del profesional
+        
+        if (area === "Psicología") resumen.Psicologia++;
+        if (area === "Tutoría") resumen.Tutoria++;
+        resumen.profesionales.add(quien);
+    });
+
+    let div = document.getElementById('resumenContainer');
+    div.style.display = "block";
+    
+    // Construcción del mensaje de resumen
+    div.innerHTML = `
+        <strong>Resumen de Gestión:</strong><br>
+        - Total de casos registrados: ${total}<br>
+        - Casos en Psicología: ${resumen.Psicologia}<br>
+        - Casos en Tutoría: ${resumen.Tutoria}<br>
+        - Profesionales activos: ${Array.from(resumen.profesionales).join(', ')}
+    `;
+}
+
+        function exportarJSON() {
+            let data = [];
+            document.querySelectorAll('#tablaCasos tbody tr').forEach(f => {
+                data.push({ est: f.cells[0].innerText, pad: f.cells[1].innerText, area: f.cells[2].innerText, quien: f.cells[3].innerText, con: f.cells[4].innerText });
+            });
+            let blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = "mis_casos.json";
+            a.click();
+        }
+
+        function importarJSON(files) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let data = JSON.parse(e.target.result);
+                document.getElementById('tablaCasos').getElementsByTagName('tbody')[0].innerHTML = "";
+                data.forEach(item => agregarCaso(item.est, item.pad, item.area, item.quien, item.con));
+            };
+            reader.readAsText(files[0]);
+        }
+    </script>
+</body>
+</html>
