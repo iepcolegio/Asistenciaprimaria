@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro Docente Final</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .controls { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        table { border-collapse: collapse; width: 100%; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #2c3e50; color: white; font-size: 12px; }
+        select { width: 100%; border: none; font-weight: bold; cursor: pointer; text-align: center; padding: 5px; border-radius: 4px; }
+        
+        /* Estilos de botones de control */
+        button { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: background 0.2s; }
+        .btn-add { background-color: #2c3e50; }
+        .btn-add:hover { background-color: #34495e; }
+        .btn-sort { background-color: #9b59b6; }
+        .btn-sort:hover { background-color: #8e44ad; }
+        .btn-save { background-color: #27ae60; }
+        .btn-save:hover { background-color: #219653; }
+        .btn-info { background-color: #16a085; }
+        .btn-info:hover { background-color: #117a65; }
+        .btn-print { background-color: #2980b9; }
+        .btn-print:hover { background-color: #2471a3; }
+        
+        /* Botón eliminar */
+        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
+        .btn-delete:hover { background-color: #c0392b; }
+        
+        /* Colores para las celdas y selects */
+        .color-AD { background-color: #3498db; color: white; }
+        .color-A { background-color: #27ae60; color: white; }
+        .color-B { background-color: #f1c40f; color: black; }
+        .color-C { background-color: #e74c3c; color: white; }
+        
+        /* ESTILOS DEL MODAL (VENTANA EMERGENTE) */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); overflow-y: auto; }
+        .modal-content { background-color: #fff; margin: 40px auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+        .close-modal:hover { color: #333; }
+        .modal-img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            table { width: 100%; border: 1px solid #000; }
+        }
+        h6 { 
+            text-align: center;
+            color: #008080;
+            font-size:30px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: bold;
+            margin: 8px;
+        }
+    </style>
+</head>
+<body>
+    <p align="center">
+        <img src="rosario.jpg" alt="Logo Colegio" width="920px">
+    </p>
+    <h6>NIVEL PRIMARIO</h6>
+    <div class="controls no-print">
+        <select id="selectGrado" onchange="cambiarGrado(this)" style="padding:10px; width:180px; border: 1px solid #ccc;">
+            <option value="1">1° Grado</option>
+            <option value="2">2° Grado</option>
+            <option value="3A">3° Grado A</option>
+            <option value="3B">3° Grado B</option>
+            <option value="4">4° Grado</option>
+            <option value="5A">5° Grado A</option>
+            <option value="5B">5° Grado B</option>
+            <option value="6A">6° Grado A</option>
+            <option value="6B">6° Grado B</option>
+        </select>
+        <input type="text" id="nombre" placeholder="Apellidos y Nombres" style="padding:10px; width:250px; border: 1px solid #ccc; border-radius: 6px;">
+        
+        <button class="btn-add" onclick="agregarEstudiante()">Añadir Alumno</button>
+        <button class="btn-sort" onclick="ordenarEstudiantes()">A-Z Ordenar</button>
+        <button class="btn-save" onclick="guardarDatos()">Guardar Cambios</button>
+        <button onclick="window.open('comportamientoC.jpg', 'popup', 'width=600,height=400')" 
+                style="background-color: #800000; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Información
+        </button>
+        <button class="btn-print" onclick="window.print()">Imprimir Secundaria</button>
+    </div>
+
+    <table id="tablaRegistro">
+        <thead>
+            <tr>
+                <th style="width:40px;">Nº</th>
+                <th style="width:250px;">Apellidos y Nombres</th>
+                <th>C1-Organización</th>
+                <th>C2-Identidad</th>
+                <th>C3-Cuidado Ambiental</th>
+                <th>C4-Trato Respetuoso</th>
+                <th>C5-Actividades</th>
+                <th>NIVEL DE LOGRO</th>
+                <th class="no-print" style="width:70px;">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+    </table>
+
+    <div id="modalCriterios" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="cerrarModal()">&times;</span>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        //  REMPLAZA ESTOS EJEMPLOS CON LOS NOMBRES REALES DE TUS ESTUDIANTES
+        // =========================================================================
+        const alumnosPredeterminados = {
+            "1": [
+                { nombre: "ALVARADO MENDOZA, Carlos", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "2": [
+                { nombre: "BENITES CASTRO, Ana María", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "3A": [
+                { nombre: "CÁRDENAS RIOS, Luis (3°A)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "3B": [
+                { nombre: "DELGADO PAZ, Pedro (3°B)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "4": [
+                { nombre: "DÍAZ ORTIZ, Sofía", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "5A": [
+                { nombre: "ESPINOSA VELA, Juan (5°A)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "5B": [
+                { nombre: "ESTRADA LUNA, Marta (5°B)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "6A": [
+                { nombre: "FLORES GÓMEZ, Elena (6°A)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ],
+            "6B": [
+                { nombre: "FUENTES RUIZ, Jorge (6°B)", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" }
+            ]
+        };
+        // =========================================================================
+
+        // Carga la base de datos local o, en su defecto, la lista predeterminada adaptada
+        let baseDatos = JSON.parse(localStorage.getItem('bd_colegio')) || alumnosPredeterminados;
+        
+        // Validar que existan todos los identificadores de los nuevos grados en el objeto de datos
+        const listaGrados = ["1", "2", "3A", "3B", "4", "5A", "5B", "6A", "6B"];
+        listaGrados.forEach(g => { if (!baseDatos[g]) baseDatos[g] = []; });
+
+        // Contraseñas actualizadas de acuerdo con los nuevos nombres de los grados
+        const contrasenas = { 
+            "1": "angel", 
+            "2": "angel2", 
+            "3A": "angel3a", 
+            "3B": "angel3b", 
+            "4": "angel4", 
+            "5A": "angel5a", 
+            "5B": "angel5b",
+            "6A": "angel6a",
+            "6B": "angel6b"
+        };
+        
+        const valorNotas = {'AD': 4, 'A': 3, 'B': 2, 'C': 1};
+        let gradoActual = "1"; 
+
+        function verificarAcceso(gradoDestino) {
+            // Convierte visualmente el texto de la alerta dependiendo de si tiene letra de sección o no
+            let textoGrado = gradoDestino.includes("A") || gradoDestino.includes("B") 
+                ? `${gradoDestino.slice(0,-1)}° grado ${gradoDestino.slice(-1)}` 
+                : `${gradoDestino}° grado`;
+
+            const pass = prompt("Contraseña para " + textoGrado + ":");
+            if (pass === contrasenas[gradoDestino]) { 
+                gradoActual = gradoDestino;
+                cargarDatos(); 
+            } else { 
+                alert("Acceso denegado"); 
+                document.getElementById('selectGrado').value = gradoActual;
+            }
+        }
+
+        function cambiarGrado(selectEl) {
+            verificarAcceso(selectEl.value);
+        }
+
+        function calcularLogro(alumno) {
+            const notas = [alumno.c1, alumno.c2, alumno.c3, alumno.c4, alumno.c5];
+            const suma = notas.reduce((acc, n) => acc + (valorNotas[n] || 3), 0); 
+            const prom = suma / 5;
+            if (prom >= 3.6) return 'AD';
+            if (prom >= 2.6) return 'A';
+            if (prom >= 1.6) return 'B';
+            return 'C';
+        }
+
+        function crearSelect(valor, index, campo) {
+            const val = valor || 'A'; 
+            return `<select class="color-${val}" onchange="actualizarNota(this, ${index}, '${campo}')">
+                ${['AD', 'A', 'B', 'C'].map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>`;
+        }
+
+        function cargarDatos() {
+            const tbody = document.getElementById('cuerpoTabla');
+            tbody.innerHTML = '';
+
+            baseDatos[gradoActual].forEach((alumno, index) => {
+                alumno.logro = calcularLogro(alumno);
+                tbody.innerHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
+                    <td>${crearSelect(alumno.c1, index, 'c1')}</td>
+                    <td>${crearSelect(alumno.c2, index, 'c2')}</td>
+                    <td>${crearSelect(alumno.c3, index, 'c3')}</td>
+                    <td>${crearSelect(alumno.c4, index, 'c4')}</td>
+                    <td>${crearSelect(alumno.c5, index, 'c5')}</td>
+                    <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
+                    <td class="no-print">
+                        <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function actualizarNota(el, index, campo) {
+            baseDatos[gradoActual][index][campo] = el.value;
+            el.className = `color-${el.value}`;
+            
+            const alumno = baseDatos[gradoActual][index];
+            const nuevoLogro = calcularLogro(alumno);
+            alumno.logro = nuevoLogro;
+            
+            const tdLogro = document.getElementById(`logro-${index}`);
+            if (tdLogro) {
+                tdLogro.className = `color-${nuevoLogro}`;
+                tdLogro.innerHTML = `<b>${nuevoLogro}</b>`;
+            }
+        }
+
+        function editarNombre(index) {
+            const nombreActual = baseDatos[gradoActual][index].nombre;
+            const nuevoNombre = prompt("Editar Apellidos y Nombres:", nombreActual);
+            
+            if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
+                baseDatos[gradoActual][index].nombre = nuevoNombre.trim();
+                document.getElementById(`nombre-${index}`).innerText = nuevoNombre.trim();
+            }
+        }
+
+        function agregarEstudiante() {
+            const nombreInput = document.getElementById('nombre');
+            const nombre = nombreInput.value.trim();
+            
+            if(nombre) {
+                baseDatos[gradoActual].push({nombre, c1:'A', c2:'A', c3:'A', c4:'A', c5:'A', logro:'A'});
+                nombreInput.value = '';
+                cargarDatos();
+            } else {
+                alert("Por favor, ingrese el nombre del estudiante.");
+            }
+        }
+
+        function eliminar(index) {
+            if (confirm(`¿Está seguro de eliminar a ${baseDatos[gradoActual][index].nombre}?`)) {
+                baseDatos[gradoActual].splice(index, 1);
+                cargarDatos();
+            }
+        }
+
+        function ordenarEstudiantes() {
+            if (baseDatos[gradoActual] && baseDatos[gradoActual].length > 0) {
+                baseDatos[gradoActual].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', {sensitivity: 'base'}));
+                cargarDatos();
+            }
+        }
+
+        function guardarDatos() { 
+            localStorage.setItem('bd_colegio', JSON.stringify(baseDatos)); 
+            alert("Datos guardados exitosamente en el navegador de este equipo."); 
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalCriterios').style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modalCriterios');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+        
+        window.onload = function() {
+            verificarAcceso("1");
+        }
+    </script>
+</body>
+</html>
