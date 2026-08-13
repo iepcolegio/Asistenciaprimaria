@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador y Editor de Excel Dinámico</title>
+    <!-- Librería SheetJS para leer y escribir Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success-color: #16a34a;
+            --success-hover: #15803d;
+            --print-color: #4b5563;
+            --warning-color: #d97706;
+            --warning-hover: #b45309;
+            --info-color: #0284c7;
+            --info-hover: #0369a1;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .file-input-wrapper {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: white;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #btnSave { background-color: var(--success-color); }
+        #btnSave:hover { background-color: var(--success-hover); }
+
+        #btnPrint { background-color: var(--print-color); }
+        #btnPrint:hover { background-color: #374151; }
+
+        #btnFilter { background-color: var(--warning-color); }
+        #btnFilter:hover { background-color: var(--warning-hover); }
+
+        #btnResumen { background-color: var(--info-color); }
+        #btnResumen:hover { background-color: var(--info-hover); }
+
+        button:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            max-height: 500px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .highlight-tarde {
+            background-color: #fef3c7 !important;
+        }
+
+        .placeholder-text {
+            text-align: center;
+            color: #64748b;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            .container, .container * { visibility: visible; }
+            .container { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; padding: 0; }
+            .controls { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>ASISTENCIAS DEL PERSONAL DE LA IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
+        
+        <div class="controls">
+            <div class="file-input-wrapper">
+                <label for="excelFile" style="font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px;">Cargar archivo Excel:</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls">
+            </div>
+            
+            <div class="btn-group">
+                <button id="btnSave" onclick="guardarExcel()" disabled>Guardar</button>
+                <button id="btnPrint" onclick="imprimirVentana()" disabled>Imprimir</button>
+                <button id="btnFilter" onclick="toggleFiltro8AM()" disabled>Agrupar por Nombres</button>
+                <button id="btnResumen" onclick="abrirVentanaResumen()" disabled>Ver Resumen por Días</button>
+            </div>
+        </div>
+
+        <div class="table-responsive" id="tableContainer">
+            <div class="placeholder-text">Sube un archivo de Excel para visualizar su contenido aquí.</div>
+        </div>
+    </div>
+
+    <script>
+        const nombresMap = {
+            1: "Luis Angel Cortez Garcia", 2: "Pablo Echeandia Martinez", 3: "Crecencio Saavedra Ferrer",
+            4: "Gianella Garcia Lam", 5: "Rosio Solis Mallma", 6: "Ruben Auris Pariona",
+            7: "Carolina Paucar Yachi", 8: "Diego Guerra Rojas", 9: "Hilda Huapaya Manco",
+            10: "Karina Campos Aburto", 11: "Felipe Chumpitaz Villalobos", 12: "Kathia Falcon Espinoza",
+            13: "Teodora Cortez de la Cruz", 14: "Gabriela Alejandra Castro", 15: "Manuel Alejandro Ortiz",
+            16: "Claudia Marcela Silva", 17: "Ricardo Andres Vega", 18: "Daniela Alejandra Ramos",
+            19: "Alejandro Jose Mendoza", 20: "Valeria Nicole Jimenez", 21: "alberto soriano martinez", 22: "jorge luna quispe",
+            23: "franco morales torres", 24: "gaston matos rosas", 25: "miriam sanchez arteaga",
+            26: "jose sanchez urbina", 27: "rogelio marianes gilgero", 28: "daniel jose arcangel",
+            29: "alvaro marcial cler", 30: "jhoan rasios mercie"
+        };
+
+        let currentData = null;
+        let filtroActivo = false;
+
+        const coloresDias = [
+            "#dbeafe", "#dcfce7", "#f3e8ff", "#ffedd5", "#fee2e2", "#fef9c3", "#ccfbf1"
+        ];
+        
+        let mapaColoresFechas = {};
+
+       
+document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    
+                    let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    let processedData = [];
+                    mapaColoresFechas = {};
+                    let colorIndex = 0;
+
+                    rawData.forEach((row, index) => {
+                        if (index === 0) {
+                            // CAMBIO: ID antes de Nombre
+                            processedData.push(["ID", "Nombre", "Fecha", "Hora", "Valor 2da Columna Excel"]);
+                            return;
+                        }
+
+                        let originalCol0 = row[0];
+                        let originalCol1 = row[1];
+                        
+                        let nombreFinal = nombresMap[originalCol0] ? nombresMap[originalCol0] : (originalCol0 !== undefined ? originalCol0 : "");
+
+                        let fechaStr = "";
+                        let horaStr = "";
+                        if (originalCol1 instanceof Date && !isNaN(originalCol1.getTime())) {
+                            fechaStr = originalCol1.toLocaleDateString();
+                            horaStr = originalCol1.toLocaleTimeString();
+                        } else if (originalCol1) {
+                            let fechaObj = new Date(originalCol1);
+                            if (!isNaN(fechaObj.getTime())) {
+                                fechaStr = fechaObj.toLocaleDateString();
+                                horaStr = fechaObj.toLocaleTimeString();
+                            } else {
+                                fechaStr = String(originalCol1);
+                            }
+                        }
+
+                        if (fechaStr && !mapaColoresFechas[fechaStr]) {
+                            mapaColoresFechas[fechaStr] = coloresDias[colorIndex % coloresDias.length];
+                            colorIndex++;
+                        }
+
+                        let idFinal = index; 
+                        let col2OriginalStr = (originalCol1 !== undefined && originalCol1 !== null) ? originalCol1 : "";
+                        if (originalCol1 instanceof Date && !isNaN(originalCol1.getTime())) {
+                            col2OriginalStr = originalCol1.toLocaleString();
+                        }
+
+                        // CAMBIO: ID antes de Nombre en el arreglo de datos
+                        processedData.push([idFinal, nombreFinal, fechaStr, horaStr, col2OriginalStr]);
+                    });
+
+                    currentData = processedData;
+                    filtroActivo = false;
+                    renderTable(currentData);
+
+                    document.getElementById('btnSave').disabled = false;
+                    document.getElementById('btnPrint').disabled = false;
+                    document.getElementById('btnFilter').disabled = false;
+                    document.getElementById('btnResumen').disabled = false;
+
+                } catch (error) {
+                    alert("Error al procesar el archivo Excel.");
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+
+        function renderTable(data) {
+            if (!data || data.length === 0) return;
+
+            let html = '<table>';
+            data.forEach((row, rowIndex) => {
+                let esTarde = false;
+
+                if (rowIndex > 0 && filtroActivo) {
+                    let horaTexto = row[2];
+                    if (horaTexto) {
+                        let [hora, minuto, segundo] = horaTexto.split(':').map(Number);
+                        let esPM = horaTexto.toLowerCase().includes('pm');
+                        let esAM = horaTexto.toLowerCase().includes('am');
+
+                        if (esPM && hora < 12) hora += 12;
+                        if (esAM && hora === 12) hora = 0;
+
+                        if (hora > 8 || (hora === 8 && (minuto > 0 || (segundo > 0)))) {
+                            esTarde = true;
+                        }
+                    }
+                }
+
+                let filaClase = esTarde ? 'class="highlight-tarde"' : '';
+                html += `<tr ${filaClase}>`;
+
+                row.forEach((cell, cellIndex) => {
+                    const cellValue = (cell !== undefined && cell !== null) ? cell : '';
+                    const tag = rowIndex === 0 ? 'th' : 'td';
+                    
+                    let estiloCelda = "";
+                    if (cellIndex === 1 && rowIndex > 0 && mapaColoresFechas[cell]) {
+                        estiloCelda = `style="background-color: ${mapaColoresFechas[cell]}; font-weight: 500;"`;
+                    }
+
+                    html += `<${tag} ${estiloCelda}>${cellValue}</${tag}>`;
+                });
+                html += '</tr>';
+            });
+            html += '</table>';
+
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+   function toggleFiltro8AM() {
+    if (!currentData || currentData.length <= 1) return;
+
+    // Paleta de colores distintos para cada empleado
+    const coloresEmpleados = [
+        "#dbeafe", "#dcfce7", "#f3e8ff", "#ffedd5", "#fee2e2", 
+        "#fef9c3", "#ccfbf1", "#fce7f3", "#e0e7ff", "#fae8ff"
+    ];
+
+    // Agrupar filas por Nombre (índice 1)
+    let gruposPorNombre = {};
+    for (let i = 1; i < currentData.length; i++) {
+        let [id, nombre, fecha, hora, valor] = currentData[i];
+        if (!gruposPorNombre[nombre]) gruposPorNombre[nombre] = [];
+        gruposPorNombre[nombre].push({ id, fecha, hora, valor });
+    }
+
+    // Abrir una nueva ventana independiente
+    let nuevaVentana = window.open('', '_blank', 'width=950,height=700');
+    
+    let htmlContenido = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Agrupación por Nombres</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b; }
+                h1 { color: #2563eb; text-align: center; margin-bottom: 25px; }
+                .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; }
+                h2 { margin-top: 0; padding: 12px; border-radius: 6px; font-size: 18px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                th, td { padding: 10px 14px; border: 1px solid #cbd5e1; text-align: left; font-size: 14px; }
+                th { background: #f1f5f9; color: #475569; }
+                .tarde { background-color: #fef3c7 !important; color: #92400e; font-weight: bold; }
+                .btn-print { padding: 10px 20px; background: #4b5563; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 20px; }
+                .btn-print:hover { background: #374151; }
+                @media print { .no-print { display: none; } body { background: white; } .card { box-shadow: none; border: 1px solid #ccc; } }
+            </style>
+        </head>
+        <body>
+            <div class="no-print"><button class="btn-print" onclick="window.print()">🖨️ Imprimir Agrupación</button></div>
+            <h1>Reporte de Asistencias Agrupado por Personal</h1>
+    `;
+
+    let colorIndex = 0;
+    for (let nombre in gruposPorNombre) {
+        // Asignar un color de fondo diferente para el título de cada empleado
+        let colorFondo = coloresEmpleados[colorIndex % coloresEmpleados.length];
+        colorIndex++;
+
+        htmlContenido += `
+            <div class="card">
+                <h2 style="background-color: ${colorFondo};">👤 ${nombre}</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        gruposPorNombre[nombre].forEach(item => {
+            let esTarde = false;
+            if (item.hora) {
+                let partes = item.hora.split(':');
+                let horaNum = Number(partes[0]) || 0;
+                let minutoNum = Number(partes[1]) || 0;
+                let esPM = item.hora.toLowerCase().includes('pm');
+                let esAM = item.hora.toLowerCase().includes('am');
+
+                if (esPM && horaNum < 12) horaNum += 12;
+                if (esAM && horaNum === 12) horaNum = 0;
+
+                if (horaNum > 8 || (horaNum === 8 && minutoNum > 0)) {
+                    esTarde = true;
+                }
+            }
+
+            htmlContenido += `
+                <tr class="${esTarde ? 'tarde' : ''}">
+                    <td>${item.id}</td>
+                    <td>${item.fecha}</td>
+                    <td>${item.hora}</td>
+                    <td>${esTarde ? '⚠️ Tarde (> 8 AM)' : '✅ Temprano'}</td>
+                </tr>
+            `;
+        });
+
+        htmlContenido += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    htmlContenido += `</body></html>`;
+    nuevaVentana.document.write(htmlContenido);
+    nuevaVentana.document.close();
+}
+     function abrirVentanaResumen() {
+    if (!currentData || currentData.length <= 1) return;
+
+    let gruposPorDia = {};
+    for (let i = 1; i < currentData.length; i++) {
+        let [id, nombre, fecha, hora] = currentData[i];
+        if (!gruposPorDia[fecha]) gruposPorDia[fecha] = [];
+        gruposPorDia[fecha].push({ id, nombre, hora });
+    }
+
+    let nuevaVentana = window.open('', '_blank', 'width=900,height=700');
+    
+    let htmlContenido = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: sans-serif; padding: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                th { background: #f1f5f9; text-align: left; padding: 10px; border: 1px solid #cbd5e1; }
+                td { padding: 10px; border: 1px solid #cbd5e1; }
+                .tarde { background-color: #fef3c7; color: #92400e; font-weight: bold; }
+                .btn-print { padding: 10px 20px; background: #4b5563; color: white; border: none; cursor: pointer; }
+                @media print { .no-print { display: none; } }
+            </style>
+        </head>
+        <body>
+            <div class="no-print"><button class="btn-print" onclick="window.print()">🖨️ Imprimir Resumen</button></div>
+            <h1>Resumen por Días</h1>
+    `;
+
+    for (let fecha in gruposPorDia) {
+        htmlContenido += `<h2>📅 ${fecha}</h2><table>
+            <tr><th>ID</th><th>Nombre</th><th>Hora</th><th>Estado</th></tr>`;
+        
+        gruposPorDia[fecha].forEach(item => {
+            let partes = item.hora.split(':');
+            let horaNum = Number(partes[0]);
+            let minutoNum = Number(partes[1]);
+            let esTarde = (horaNum > 8 || (horaNum === 8 && minutoNum > 0));
+
+            htmlContenido += `<tr class="${esTarde ? 'tarde' : ''}">
+                <td>${item.id}</td>
+                <td>${item.nombre}</td>
+                <td>${item.hora}</td>
+                <td>${esTarde ? '⚠️ Tarde' : '✅ Temprano'}</td>
+            </tr>`;
+        });
+        htmlContenido += `</table>`;
+    }
+
+    htmlContenido += `</body></html>`;
+    nuevaVentana.document.write(htmlContenido);
+    nuevaVentana.document.close();
+}
+
+
+       function guardarExcel() {
+    if (!currentData) return;
+    
+    // Crear la hoja de trabajo
+    const newWs = XLSX.utils.aoa_to_sheet(currentData);
+    
+    // Configurar el ancho de las columnas (índice 0-based: A=0, B=1, C=2, D=3, E=4)
+    // { wch: 23 } significa un ancho de 23 caracteres
+    newWs['!cols'] = [
+        { wch: 10 }, // Columna A (ID)
+        { wch: 23 }, // Columna B (Nombre) - Ajustado a 23
+        { wch: 15 }, // Columna C
+        { wch: 15 }, // Columna D
+        { wch: 23 }  // Columna E (Valor) - Ajustado a 23
+    ];
+    
+    const newWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(newWb, newWs, "Hoja1");
+    XLSX.writeFile(newWb, "archivo_procesado.xlsx");
+}
+    </script>
+</body>
+</html>
