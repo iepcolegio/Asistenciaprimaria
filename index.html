@@ -105,6 +105,7 @@
     <!-- Barra Lateral -->
     <nav class="sidebar">
         <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
+        <!-- Modifica los atributos 'data-url' con los enlaces que prefieras -->
         <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
         <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
         <button class="menu-btn" data-url="#">Comportamiento Primaria</button>
@@ -112,8 +113,8 @@
         <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas</button>
         <button class="menu-btn" data-url="CASOS.html">Registro Tutoria</button>
         <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Admi</button>
-        <!-- Botón de documentos configurado para cargar en el iframe -->
-        <button class="menu-btn" data-url="https://sites.google.com/view/archivosdocumentos?usp=sharing">Documentos</button>
+        <!-- Botón de documentos con un ID específico -->
+        <button class="menu-btn" id="doc-btn" data-url="https://sites.google.com/view/archivosdocumentos?usp=sharing">Documentos</button>
     </nav>
 
     <!-- Área Derecha -->
@@ -131,15 +132,21 @@
         const buttons = document.querySelectorAll('.menu-btn');
         const viewer = document.getElementById('viewer');
         const welcome = document.getElementById('welcome');
+        const docBtn = document.getElementById('doc-btn');
 
         buttons.forEach(button => {
             button.addEventListener('click', () => {
+                const url = button.getAttribute('data-url');
+
+                // Si es el botón de documentos, abre en una nueva pestaña y no altera el iframe principal
+                if (button === docBtn) {
+                    window.open(url, '_blank');
+                    return;
+                }
+
                 // Remover la clase 'active' de todos los botones y ponérsela al presionado
                 buttons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-
-                // Obtener el link del atributo data-url
-                const url = button.getAttribute('data-url');
 
                 // Ocultar mensaje de bienvenida y mostrar el iframe con la URL
                 welcome.style.display = 'none';
