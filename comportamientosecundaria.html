@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro Docente Final</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .controls { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        table { border-collapse: collapse; width: 100%; background: white; table-layout: fixed; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        th { background: #2c3e50; color: white; font-size: 12px; }
+        select { width: 100%; border: none; font-weight: bold; cursor: pointer; text-align: center; padding: 5px; border-radius: 4px; }
+        
+        /* Estilos de botones de control */
+        button { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: background 0.2s; }
+        .btn-add { background-color: #2c3e50; }
+        .btn-add:hover { background-color: #34495e; }
+        .btn-sort { background-color: #9b59b6; }
+        .btn-sort:hover { background-color: #8e44ad; }
+        .btn-save { background-color: #27ae60; }
+        .btn-save:hover { background-color: #219653; }
+        .btn-excel { background-color: #d35400; }
+        .btn-excel:hover { background-color: #ba4a00; }
+        .btn-print { background-color: #2980b9; }
+        .btn-print:hover { background-color: #2471a3; }
+        
+        /* Botón eliminar */
+        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
+        .btn-delete:hover { background-color: #c0392b; }
+        
+        /* Colores para las celdas y selects */
+        .color-AD { background-color: #3498db; color: white; }
+        .color-A { background-color: #27ae60; color: white; }
+        .color-B { background-color: #f1c40f; color: black; }
+        .color-C { background-color: #e74c3c; color: white; }
+        
+        /* Encabezado exclusivo para impresión */
+        .print-header { display: none; margin-bottom: 20px; font-size: 14px; line-height: 1.6; }
+        .print-header table { width: 100%; border: none; }
+        .print-header td { border: none; text-align: left; padding: 4px; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-header { display: block !important; }
+            body { background: white; padding: 0; }
+            table { width: 100%; border: 1px solid #000; }
+        }
+        h6 { 
+            text-align: center;
+            color: #008080;
+            font-size: 30px;
+            font-family: 'Roboto', sans-serif;
+            font-weight: bold;
+            margin: 8px;
+        }
+    </style>
+</head>
+<body>
+    <p align="center">
+        <img src="rosario.jpg" alt="Logo Colegio" width="920px">
+    </p>
+    <h6>NIVEL SECUNDARIO</h6>
+    <div class="controls no-print">
+        <select id="selectGrado" onchange="cambiarGrado(this)" style="padding:10px; width:130px; border: 1px solid #ccc;">
+            <option value="1">1° Grado</option>
+            <option value="2">2° Grado</option>
+            <option value="3">3° Grado</option>
+            <option value="4">4° Grado</option>
+            <option value="5">5° Grado</option>
+        </select>
+        
+        <select id="selectBimestre" style="padding:10px; width:130px; border: 1px solid #ccc; border-radius: 6px;">
+            <option value="I Bimestre">I Bimestre</option>
+            <option value="II Bimestre">II Bimestre</option>
+            <option value="III Bimestre">III Bimestre</option>
+            <option value="IV Bimestre">IV Bimestre</option>
+        </select>
+
+        <input type="text" id="docente" placeholder="Apellidos y Nombres del Docente" style="padding:10px; width:200px; border: 1px solid #ccc; border-radius: 6px;">
+        <input type="text" id="area" placeholder="Área Curricular" style="padding:10px; width:130px; border: 1px solid #ccc; border-radius: 6px;">
+        <input type="text" id="nombre" placeholder="Apellidos y Nombres del Alumno" style="padding:10px; width:200px; border: 1px solid #ccc; border-radius: 6px;">
+        
+        <button class="btn-add" onclick="agregarEstudiante()">Añadir Alumno</button>
+        <button class="btn-sort" onclick="ordenarEstudiantes()">A-Z Ordenar</button>
+        <button class="btn-save" onclick="guardarDatos()">Guardar Cambios</button>
+        <button class="btn-excel" onclick="exportarExcel()">Exportar Excel</button>
+        <button onclick="window.open('comportamientoC.jpg', 'popup', 'width=600,height=400')" 
+                style="background-color: #800000; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Información
+        </button>
+        <button class="btn-print" onclick="prepararEImprimir()">Imprimir Secundaria</button>
+    </div>
+
+    <div id="printHeaderInfo" class="print-header">
+        <table>
+            <tr>
+                <td><strong>Docente:</strong> <span id="lblDocente"></span></td>
+                <td><strong>Área:</strong> <span id="lblArea"></span></td>
+            </tr>
+            <tr>
+                <td><strong>Grado:</strong> <span id="lblGrado"></span></td>
+                <td><strong>Periodo:</strong> <span id="lblBimestre"></span></td>
+            </tr>
+        </table>
+        <hr style="border: 0.5px solid #000; margin-top: 10px; margin-bottom: 15px;">
+    </div>
+
+    <table id="tablaRegistro">
+        <thead>
+            <tr>
+                <th style="width:40px;">Nº</th>
+                <th style="width:250px;">Apellidos y Nombres</th>
+                <th>C1-Organización</th>
+                <th>C2-Identidad</th>
+                <th>C3-Cuidado Ambiental</th>
+                <th>C4-Trato Respetuoso</th>
+                <th>C5-Actividades</th>
+                <th>NIVEL DE LOGRO</th>
+                <th class="no-print" style="width:70px;">Acción</th>
+            </tr>
+        </thead>
+        <tbody id="cuerpoTabla"></tbody>
+    </table>
+
+    <script>
+       const alumnosPredeterminados = {
+    "1": [
+        { nombre: "ABURTO PEREZ NARDA V." }, { nombre: "ABURTO ZAMUDIO ANA TALIA" }, { nombre: "AVALOS HERRERA THIAGO" },
+        { nombre: "AVALOS CHUMPITAZ ZOE THAIS" }, { nombre: "CHUMPITAZ BALTAZAR KIARA" }, { nombre: "CRISPIN QUISPE DAYRO" },
+        { nombre: "FLORES SAAVEDRA ALEJANDRA" }, { nombre: "GARCIA FERNANDEZ BANDES WILLIAM" }, { nombre: "MALASQUEZ CHUMPITAZ ANGEL" },
+        { nombre: "MALASQUEZ CHUMPITAZ ROXETTE" }, { nombre: "MALASQUEZ LOZANO ANAHI" }, { nombre: "MALASQUEZ VILLALOBOS KAZUMI" },
+        { nombre: "OCHOA QUISPE ARELIZ AIXA" }, { nombre: "PIGUAY VASQUEZ LUIS GERARD" }, { nombre: "PIZANGO FLORES SELVIA" },
+        { nombre: "RAMOS CAMPOS XIARA" }, { nombre: "SILOPU ARCOS FREDY" }, { nombre: "SILVA MONTILLA YOSGUER" },
+        { nombre: "VILLALOBOS QUISPE LUIS" }, { nombre: "VILLALOBOS CAMACHO JEAN CARLOS" }, { nombre: "ZAMUDIO AVALOS MARIA" },
+        { nombre: "SALAZAR NEYRA JAIRO" }
+    ],
+    "2": [
+        { nombre: "ABURTO ZAVALA NAIRA MAITE" }, { nombre: "ACUÑA QUISPE ALICIA NICOLE" }, { nombre: "AGUILAR NEYRA ESEFANI ABIGAIL" },
+        { nombre: "ARCOS EGUSQUIZA LEONARDO EZEQUIEL" }, { nombre: "ARIAS LIMA ALESSIA BRIANA" }, { nombre: "ARIAS SALINAS KAHORI MARLENY" },
+        { nombre: "ARIAS VILLALOBOS JEAN POOL" }, { nombre: "AVALOS ARIAS JOSE MARIA" }, { nombre: "BENAVENTE MALASQUEZ ISAAC EDUARDO" },
+        { nombre: "CANDELA CASTILLO ESTEBAN" }, { nombre: "CANDELA PEREZ JASUE" }, { nombre: "CASILLA ARCOS KAORY KATSUMY" },
+        { nombre: "CHUMPITAZ ROSAS VALESKA ELIZABETH" }, { nombre: "DIAZ ARIAS AGELI" }, { nombre: "FLORES SAAVEDRA FABIANA YACET" },
+        { nombre: "LARA PAREDES ROSA FERNANADA" }, { nombre: "MENDIGUETE ACUÑA FRANCO NICOLAS" }, { nombre: "MEZA CHUMPITAZ DAYANA BEATRIZ" },
+        { nombre: "QUISPE FRANCIA LUISA MARIA" }, { nombre: "RODRIGUEZ ABURTO MARIA GUADALUPE" }, { nombre: "VILLALOBOS ARIAS OSSTIN JOSUE" },
+        { nombre: "ZAPATA HERRERA BYRON" }, { nombre: "SALAZAR NEIRA ANI" }, { nombre: "ESPINO MENDOZA NAHUM JHOKADY" },
+        { nombre: "GARCIA ARIAS JIMENA" }
+    ],
+    "3": [
+        { nombre: "ALLANTA QUIROZ THAMARA LUCIA" }, { nombre: "AVALOS ORBE SARAI KARUMI" }, { nombre: "AVALOS VASQUEZ JUAN JOSE" },
+        { nombre: "CAMPOS MERCADO KATHERINE NICOL" }, { nombre: "CARBAJAL RIVERA EDGAR GEORGE GABRIEL" }, { nombre: "CASTELL TENEMAS NAYLIN YAMIL" },
+        { nombre: "CHOZ CISNEROS JUAN ANDRES" }, { nombre: "CHUMPITAZ CERRON HARUMI XIOMARA" }, { nombre: "DAVILA VARGAS JHELEN NAOMI" },
+        { nombre: "ESQUEN MEJIA DARREL ANDRE" }, { nombre: "FRANCIA HERNANDEZ EDISON JOSEMARIA" }, { nombre: "GARCIA MALASQUEZ TAYRA ANGELY" },
+        { nombre: "LEON CHUMPITAZ DYLAN MANUEL ANDRES" }, { nombre: "MALASQUEZ ABURTO JHEFREE GONZALO" }, { nombre: "PIGUAY DOMINGUEZ MARIA DE LOS ANGELES" },
+        { nombre: "RAMOS ANGULO KRIZIA ZAGHENY MARCELA" }, { nombre: "RENGIFO QUISPE MONICA KAORI" }, { nombre: "SANCHEZ CAMPOS DREY ABDUL" },
+        { nombre: "SAUREZ SANCHEZ BRUCE WILLIANS" }, { nombre: "VILLALOBOS CAMACHO GUADALUPE" }, { nombre: "VILLALOBOS SAIRE SITA TAKURANI" },
+        { nombre: "VILLALOBOS VILLALOBOS PARVATI DEVI" }, { nombre: "MALASQUEZ PARIONA ROSA MARIA" }
+    ],
+    "4": [
+        { nombre: "ABURTO GUZMAN LUHANA KAHORI" }, { nombre: "ARIAS ACUÑA JOSIANA MARIA V." }, { nombre: "ARIAS QUISPE JOSE GONZALO" },
+        { nombre: "ARIAS RAMOS ROBERTO FRANCISCO" }, { nombre: "ARQUIÑEVA AVALOS MELANY REBECA" }, { nombre: "AVALOS SANCHEZ MARIA ELITIA NAOMI" },
+        { nombre: "CASTAÑEDA HUAPAYA LUANA GAHELA" }, { nombre: "CRISPIN QUISPE ANDRELY SOLEDAD" }, { nombre: "CHUMPITAZ ROJAS MARIA ALMENDRA" },
+        { nombre: "CHUMPITAZ ROSAS AIME MARLENE" }, { nombre: "GARCIA MARCA BLENI YUZELI" }, { nombre: "GARCIA ORE THIAGO MATEO" },
+        { nombre: "GARCIA VILLALOBOS NISHINJA DEVA" }, { nombre: "MEZA QUISPE GENESIS ROSSMERY" }, { nombre: "MOYA CASTILLO ANDREA ALEXANDRA" },
+        { nombre: "NARRO ARIAS GREACE DAYANNA" }, { nombre: "RAMOS AVALOS YERIK ANYELO YAMIL" }, { nombre: "TASAYCO ROJAS ALVARO YHAJAIRO" },
+        { nombre: "TOMAS PULIDO ALLISON TATIANA" }
+    ],
+    "5": [
+        { nombre: "ABURTO PEREZ YASMIN GABRIELA" }, { nombre: "ALIAGA MANIHUARI LEONARDO DAVID" }, { nombre: "ANGELES CHUMPITAZ CHERLIT FIORELLA" },
+        { nombre: "ARANA VILCA MARIA PALOMA" }, { nombre: "ARIAS CAMPOS FABIAN ALEXANDER" }, { nombre: "ARIAS LIMA AXEL FRANCISCO" },
+        { nombre: "ARIAS VILLALOBOS YASURI" }, { nombre: "AVALOS AVALOS LUHANA BELEN" }, { nombre: "AVALOS QUISPE VICTOR ALONSO SAMIR" },
+        { nombre: "CAMPOS AQUINO ABIGAIL GUADALUPE" }, { nombre: "CAMPOS BARTOLO DANY DANIEL" }, { nombre: "CAMPOS NAPAN LUZ ANDREA" },
+        { nombre: "CAMPOS SOLER KATSUMI SAHORI" }, { nombre: "CAMPOS YAYA DENNISE YOELI" }, { nombre: "CANDELA CHAVEZ STEPHANO DENILSON" },
+        { nombre: "CANDELA PACHECO DAYANA ANTUANET" }, { nombre: "CASTILLO CAMPOS ROSA RUBI RINA" }, { nombre: "DAVILA ZAVALA CELESTE ADRIANA" },
+        { nombre: "GARCIA MALASQUEZ ALESSIA ISABEL" }, { nombre: "GARCIA MALASQUEZ FERGIE ESMERALDA" }, { nombre: "GARCIA VILLALOBOS VRNDA DEVI" },
+        { nombre: "PAZ BERRU NEYSER YOEL" }, { nombre: "PELAEZ AVALOS MARJORIE ESPERANZA" }, { nombre: "QUIQUIA VAZQUEZ YASUMI XIOMARA" },
+        { nombre: "RODRIGUEZ ANGULO JIORDANA R." }, { nombre: "ROJAS MEDINA ARIADNA IVANA" }, { nombre: "SANCHEZ ROSAS JUAN PABLO" },
+        { nombre: "SILOPU ARCOS MARIA DEL CARMEN" }, { nombre: "SUAREZ ARCOS AYTANA MARIA M." }, { nombre: "SUAREZ SANCHEZ DEYVID DAVID" }
+    ]
+};
+        let baseDatos = JSON.parse(JSON.stringify(alumnosPredeterminados));
+        const contrasenas = { "1":"primero", "2":"segundo", "3":"tercero", "4":"cuarto", "5":"quinto" };
+        const valorNotas = {'AD': 4, 'A': 3, 'B': 2, 'C': 1};
+        let gradoActual = "1"; 
+
+        function verificarAcceso(gradoDestino) {
+            const pass = prompt("Contraseña para " + gradoDestino + "° grado:");
+            if (pass === contrasenas[gradoDestino]) { 
+                gradoActual = gradoDestino;
+                cargarDatos(); 
+            } else { 
+                alert("Acceso denegado"); 
+                document.getElementById('selectGrado').value = gradoActual;
+            }
+        }
+
+        function cambiarGrado(selectEl) {
+            verificarAcceso(selectEl.value);
+        }
+
+        function calcularLogro(alumno) {
+            const notas = [alumno.c1, alumno.c2, alumno.c3, alumno.c4, alumno.c5];
+            const suma = notas.reduce((acc, n) => acc + (valorNotas[n] || 3), 0); 
+            const prom = suma / 5;
+            if (prom >= 3.6) return 'AD';
+            if (prom >= 2.6) return 'A';
+            if (prom >= 1.6) return 'B';
+            return 'C';
+        }
+
+        function crearSelect(valor, index, campo) {
+            const val = valor || 'A'; 
+            return `<select class="color-${val}" onchange="actualizarNota(this, ${index}, '${campo}')">
+                ${['AD', 'A', 'B', 'C'].map(opt => `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>`;
+        }
+
+        function cargarDatos() {
+            const tbody = document.getElementById('cuerpoTabla');
+            tbody.innerHTML = '';
+
+            if (!baseDatos[gradoActual]) baseDatos[gradoActual] = [];
+
+            baseDatos[gradoActual].forEach((alumno, index) => {
+                alumno.logro = calcularLogro(alumno);
+                tbody.innerHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
+                    <td>${crearSelect(alumno.c1, index, 'c1')}</td>
+                    <td>${crearSelect(alumno.c2, index, 'c2')}</td>
+                    <td>${crearSelect(alumno.c3, index, 'c3')}</td>
+                    <td>${crearSelect(alumno.c4, index, 'c4')}</td>
+                    <td>${crearSelect(alumno.c5, index, 'c5')}</td>
+                    <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
+                    <td class="no-print">
+                        <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function actualizarNota(el, index, campo) {
+            baseDatos[gradoActual][index][campo] = el.value;
+            el.className = `color-${el.value}`;
+            
+            const alumno = baseDatos[gradoActual][index];
+            const nuevoLogro = calcularLogro(alumno);
+            alumno.logro = nuevoLogro;
+            
+            const tdLogro = document.getElementById(`logro-${index}`);
+            if (tdLogro) {
+                tdLogro.className = `color-${nuevoLogro}`;
+                tdLogro.innerHTML = `<b>${nuevoLogro}</b>`;
+            }
+        }
+
+        function editarNombre(index) {
+            const nombreActual = baseDatos[gradoActual][index].nombre;
+            const nuevoNombre = prompt("Editar Apellidos y Nombres:", nombreActual);
+            
+            if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
+                baseDatos[gradoActual][index].nombre = nuevoNombre.trim();
+                document.getElementById(`nombre-${index}`).innerText = nuevoNombre.trim();
+            }
+        }
+
+        function agregarEstudiante() {
+            const nombreInput = document.getElementById('nombre');
+            const nombre = nombreInput.value.trim();
+            
+            if(nombre) {
+                baseDatos[gradoActual].push({nombre, c1:'A', c2:'A', c3:'A', c4:'A', c5:'A', logro:'A'});
+                nombreInput.value = '';
+                cargarDatos();
+            } else {
+                alert("Por favor, ingrese el nombre del estudiante.");
+            }
+        }
+
+        function eliminar(index) {
+            if (confirm(`¿Está seguro de eliminar a ${baseDatos[gradoActual][index].nombre}?`)) {
+                baseDatos[gradoActual].splice(index, 1);
+                cargarDatos();
+            }
+        }
+
+        function ordenarEstudiantes() {
+            if (baseDatos[gradoActual] && baseDatos[gradoActual].length > 0) {
+                baseDatos[gradoActual].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', {sensitivity: 'base'}));
+                cargarDatos();
+            }
+        }
+
+        function guardarDatos() { 
+            const datosGuardar = {
+                alumnos: baseDatos,
+                docente: document.getElementById('docente').value,
+                area: document.getElementById('area').value,
+                bimestre: document.getElementById('selectBimestre').value
+            };
+            localStorage.setItem('bd_colegio_v4', JSON.stringify(datosGuardar)); 
+            alert("Datos guardados exitosamente en el navegador de este equipo."); 
+        }
+
+        function exportarExcel() {
+            let datosExportar = [];
+            baseDatos[gradoActual].forEach((alumno, index) => {
+                datosExportar.push({
+                    "N°": index + 1,
+                    "Apellidos y Nombres": alumno.nombre,
+                    "C1-Organización": alumno.c1 || 'A',
+                    "C2-Identidad": alumno.c2 || 'A',
+                    "C3-Cuidado Ambiental": alumno.c3 || 'A',
+                    "C4-Trato Respetuoso": alumno.c4 || 'A',
+                    "C5-Actividades": alumno.c5 || 'A',
+                    "NIVEL DE LOGRO": alumno.logro || 'A'
+                });
+            });
+            const worksheet = XLSX.utils.json_to_sheet(datosExportar);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `${gradoActual} Grado`);
+            XLSX.writeFile(workbook, `Registro_${gradoActual}_Grado.xlsx`);
+        }
+
+        function prepararEImprimir() {
+            document.getElementById('lblDocente').innerText = document.getElementById('docente').value || "No especificado";
+            document.getElementById('lblArea').innerText = document.getElementById('area').value || "No especificado";
+            document.getElementById('lblGrado').innerText = gradoActual + "° Grado";
+            document.getElementById('lblBimestre').innerText = document.getElementById('selectBimestre').value;
+            
+            window.print();
+        }
+
+        window.onload = function() {
+            const datosGuardados = JSON.parse(localStorage.getItem('bd_colegio_v4'));
+            
+            if (datosGuardados) {
+                if (datosGuardados.alumnos) {
+                    baseDatos = datosGuardados.alumnos;
+                    document.getElementById('docente').value = datosGuardados.docente || "";
+                    document.getElementById('area').value = datosGuardados.area || "";
+                    if(datosGuardados.bimestre) {
+                        document.getElementById('selectBimestre').value = datosGuardados.bimestre;
+                    }
+                } else {
+                    baseDatos = datosGuardados;
+                }
+            }
+            
+            ["1", "2", "3", "4", "5"].forEach(g => { 
+                if (!baseDatos[g] || baseDatos[g].length === 0) {
+                    baseDatos[g] = alumnosPredeterminados[g] ? JSON.parse(JSON.stringify(alumnosPredeterminados[g])) : []; 
+                }
+            });
+
+            verificarAcceso("1");
+        }
+    </script>
+</body>
+</html>
