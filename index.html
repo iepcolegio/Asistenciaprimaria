@@ -69,7 +69,7 @@
         .content-area {
             flex: 1;
             display: flex;
-            flex-czirection: column;
+            flex-direction: column;
             background-color: #ffffff;
             position: relative;
         }
@@ -105,7 +105,6 @@
     <!-- Barra Lateral -->
     <nav class="sidebar">
         <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
-        <!-- Modifica los atributos 'data-url' con los enlaces que prefieras -->
         <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
         <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
         <button class="menu-btn" data-url="#">Comportamiento Primaria</button>
@@ -113,7 +112,8 @@
         <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas</button>
         <button class="menu-btn" data-url="CASOS.html">Registro Tutoria</button>
         <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Admi</button>
-        <button class="menu-btn" data-url="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank">Documentos</button>
+        <!-- Botón de documentos configurado para cargar en el iframe -->
+        <button class="menu-btn" data-url="https://sites.google.com/view/archivosdocumentos?usp=sharing">Documentos</button>
     </nav>
 
     <!-- Área Derecha -->
@@ -151,7 +151,8 @@
 
 </body>
 </html>
-<script languaje="javascript">
+
+<script>
 var getin = prompt("Acceso a Documentos administrativos")
 if (getin!="Rosario-20125")
 {location.href="index.html"}
