@@ -185,6 +185,10 @@
                 <button id="btnPrint" onclick="imprimirVentana()" disabled>Imprimir</button>
                 <button id="btnFilter" onclick="toggleFiltro8AM()" disabled>Agrupar por Nombres</button>
                 <button id="btnResumen" onclick="abrirVentanaResumen()" disabled>Ver Resumen por Días</button>
+                <div class="btn-group">
+    <!-- ... botones existentes ... -->
+    <button id="btnNiveles" onclick="abrirVentanaNiveles()" disabled style="background-color: #6366f1;">Ver por Niveles</button>
+</div>
             </div>
         </div>
 
@@ -277,6 +281,7 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
             document.getElementById('btnPrint').disabled = false;
             document.getElementById('btnFilter').disabled = false;
             document.getElementById('btnResumen').disabled = false;
+            document.getElementById('btnNiveles').disabled = false;
 
         } catch (error) {
             alert("Error al procesar el archivo Excel.");
@@ -331,163 +336,133 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
         }
 
    function toggleFiltro8AM() {
+   
     if (!currentData || currentData.length <= 1) return;
 
-    // Paleta de colores distintos para cada empleado
-    const coloresEmpleados = [
-        "#dbeafe", "#dcfce7", "#f3e8ff", "#ffedd5", "#fee2e2", 
-        "#fef9c3", "#ccfbf1", "#fce7f3", "#e0e7ff", "#fae8ff"
-    ];
+    const obtenerMinutos = (horaStr) => {
+        let [time, modifier] = horaStr.split(' ');
+        let [hours, minutes, seconds] = time.split(':');
+        hours = parseInt(hours);
+        if (modifier === 'p.m.' && hours !== 12) hours += 12;
+        if (modifier === 'a.m.' && hours === 12) hours = 0;
+        return hours * 60 + parseInt(minutes);
+    };
 
-    // Agrupar filas por Nombre (índice 1)
-    let gruposPorNombre = {};
-    for (let i = 1; i < currentData.length; i++) {
-        let [id, nombre, fecha, hora, valor] = currentData[i];
-        if (!gruposPorNombre[nombre]) gruposPorNombre[nombre] = [];
-        gruposPorNombre[nombre].push({ id, fecha, hora, valor });
-    }
+    // Agrupamos por nombre
+    const agrupado = currentData.slice(1).reduce((acc, fila) => {
+        let nombre = fila[1];
+        let minutos = obtenerMinutos(fila[3]);
 
-    // Abrir una nueva ventana independiente
-    let nuevaVentana = window.open('', '_blank', 'width=950,height=700');
-    
-    let htmlContenido = `
-        <!DOCTYPE html>
-        <html lang="es">
+        // Nueva lógica de estados
+        let estado = 'REGULAR';
+        let clase = 'normal';
+
+        if (minutos >= 360 && minutos <= 480) { // 6:00 AM - 8:00 AM
+            estado = 'TEMPRANO';
+            clase = 'temprano';
+        } else if (minutos > 480 && minutos <= 540) { // 8:01 AM - 9:00 AM
+            estado = 'TARDE';
+            clase = 'tarde';
+        }
+
+        if (!acc[nombre]) acc[nombre] = [];
+        acc[nombre].push({ fecha: fila[2], hora: fila[3], estado: estado, clase: clase });
+        return acc;
+    }, {});
+
+    let nuevaVentana = window.open('', '_blank', 'width=900,height=800');
+    nuevaVentana.document.write(`
+        <html>
         <head>
-            <meta charset="UTF-8">
-            <title>Agrupación por Nombres</title>
-            <style>
-                body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b; }
-                h1 { color: #2563eb; text-align: center; margin-bottom: 25px; }
-                .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; }
-                h2 { margin-top: 0; padding: 12px; border-radius: 6px; font-size: 18px; }
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                th, td { padding: 10px 14px; border: 1px solid #cbd5e1; text-align: left; font-size: 14px; }
-                th { background: #f1f5f9; color: #475569; }
-                .tarde { background-color: #fef3c7 !important; color: #92400e; font-weight: bold; }
-                .btn-print { padding: 10px 20px; background: #4b5563; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; margin-bottom: 20px; }
-                .btn-print:hover { background: #374151; }
-                @media print { .no-print { display: none; } body { background: white; } .card { box-shadow: none; border: 1px solid #ccc; } }
-            </style>
-        </head>
-        <body>
-            <div class="no-print"><button class="btn-print" onclick="window.print()">🖨️ Imprimir Agrupación</button></div>
-            <h1>Reporte de Asistencias Agrupado por Personal</h1>
-    `;
-
-    let colorIndex = 0;
-    for (let nombre in gruposPorNombre) {
-        // Asignar un color de fondo diferente para el título de cada empleado
-        let colorFondo = coloresEmpleados[colorIndex % coloresEmpleados.length];
-        colorIndex++;
-
-        htmlContenido += `
-            <div class="card">
-                <h2 style="background-color: ${colorFondo};">👤 ${nombre}</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        gruposPorNombre[nombre].forEach(item => {
-            let esTarde = false;
-            if (item.hora) {
-                let partes = item.hora.split(':');
-                let horaNum = Number(partes[0]) || 0;
-                let minutoNum = Number(partes[1]) || 0;
-                let esPM = item.hora.toLowerCase().includes('pm');
-                let esAM = item.hora.toLowerCase().includes('am');
-
-                if (esPM && horaNum < 12) horaNum += 12;
-                if (esAM && horaNum === 12) horaNum = 0;
-
-                if (horaNum > 8 || (horaNum === 8 && minutoNum > 0)) {
-                    esTarde = true;
-                }
-            }
-
-            htmlContenido += `
-                <tr class="${esTarde ? 'tarde' : ''}">
-                    <td>${item.id}</td>
-                    <td>${item.fecha}</td>
-                    <td>${item.hora}</td>
-                    <td>${esTarde ? '⚠️ Tarde (> 8 AM)' : '✅ Temprano'}</td>
-                </tr>
-            `;
-        });
-
-        htmlContenido += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-    }
-
-    htmlContenido += `</body></html>`;
-    nuevaVentana.document.write(htmlContenido);
-    nuevaVentana.document.close();
-}
-     function abrirVentanaResumen() {
-    if (!currentData || currentData.length <= 1) return;
-
-    let gruposPorDia = {};
-    for (let i = 1; i < currentData.length; i++) {
-        let [id, nombre, fecha, hora] = currentData[i];
-        if (!gruposPorDia[fecha]) gruposPorDia[fecha] = [];
-        gruposPorDia[fecha].push({ id, nombre, hora });
-    }
-
-    let nuevaVentana = window.open('', '_blank', 'width=900,height=700');
-    
-    let htmlContenido = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
             <style>
                 body { font-family: sans-serif; padding: 20px; }
-                table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-                th { background: #f1f5f9; text-align: left; padding: 10px; border: 1px solid #cbd5e1; }
-                td { padding: 10px; border: 1px solid #cbd5e1; }
-                .tarde { background-color: #fef3c7; color: #92400e; font-weight: bold; }
-                .btn-print { padding: 10px 20px; background: #4b5563; color: white; border: none; cursor: pointer; }
-                @media print { .no-print { display: none; } }
+                .tarjeta-nombre { margin-bottom: 25px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+                .temprano { color: #059669; font-weight: bold; }
+                .tarde { color: #dc2626; font-weight: bold; }
+                .normal { color: #000000; }
             </style>
         </head>
         <body>
-            <div class="no-print"><button class="btn-print" onclick="window.print()">🖨️ Imprimir Resumen</button></div>
-            <h1>Resumen por Días</h1>
-    `;
+            <h2>Registros Agrupados por Nombre</h2>
+            ${Object.keys(agrupado).sort().map(nombre => `
+                <div class="tarjeta-nombre">
+                    <h3>👤 ${nombre}</h3>
+                    <table>
+                        <tr><th>Fecha</th><th>Hora</th><th>Estado</th></tr>
+                        ${agrupado[nombre].map(reg => `
+                            <tr class="${reg.clase}">
+                                <td>${reg.fecha}</td>
+                                <td>${reg.hora}</td>
+                                <td>${reg.estado}</td>
+                            </tr>
+                        `).join('')}
+                    </table>
+                </div>
+            `).join('')}
+        </body>
+        </html>
+    `);
+    nuevaVentana.document.close();
+}
+    function abrirVentanaResumen() {
+   if (!currentData || currentData.length <= 1) return;
 
-    for (let fecha in gruposPorDia) {
-        htmlContenido += `<h2>📅 ${fecha}</h2><table>
-            <tr><th>ID</th><th>Nombre</th><th>Hora</th><th>Estado</th></tr>`;
-        
-        gruposPorDia[fecha].forEach(item => {
-            let partes = item.hora.split(':');
-            let horaNum = Number(partes[0]);
-            let minutoNum = Number(partes[1]);
-            let esTarde = (horaNum > 8 || (horaNum === 8 && minutoNum > 0));
+    const obtenerMinutos = (horaStr) => {
+        let [time, modifier] = horaStr.split(' ');
+        let [hours, minutes, seconds] = time.split(':');
+        hours = parseInt(hours);
+        if (modifier === 'p.m.' && hours !== 12) hours += 12;
+        if (modifier === 'a.m.' && hours === 12) hours = 0;
+        return hours * 60 + parseInt(minutes);
+    };
 
-            htmlContenido += `<tr class="${esTarde ? 'tarde' : ''}">
-                <td>${item.id}</td>
-                <td>${item.nombre}</td>
-                <td>${item.hora}</td>
-                <td>${esTarde ? '⚠️ Tarde' : '✅ Temprano'}</td>
-            </tr>`;
-        });
-        htmlContenido += `</table>`;
-    }
+    // Agrupamos filas completas por fecha
+    const resumen = currentData.slice(1).reduce((acc, fila) => {
+        let fecha = fila[2];
+        let minutos = obtenerMinutos(fila[3]);
 
-    htmlContenido += `</body></html>`;
-    nuevaVentana.document.write(htmlContenido);
+        let estado = 'normal';
+        if (minutos >= 420 && minutos <= 480) estado = 'temprano';      // 7-8 AM
+        else if (minutos > 480 && minutos <= 540) estado = 'tarde';    // 8-9 AM
+        else estado = 'normal';                                        // 9 AM - 7 PM
+
+        if (!acc[fecha]) acc[fecha] = [];
+        acc[fecha].push({ nombre: fila[1], hora: fila[3], estado: estado });
+        return acc;
+    }, {});
+
+    let nuevaVentana = window.open('', '_blank', 'width=800,height=800');
+    nuevaVentana.document.write(`
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; padding: 20px; background: #f8fafc; }
+                .bloque-dia { background: white; margin-bottom: 20px; padding: 15px; border-radius: 8px; border-left: 5px solid #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+                h3 { margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+                .fila-persona { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+                .temprano { color: #059669; font-weight: bold; }
+                .tarde { color: #dc2626; font-weight: bold; }
+                .normal { color: #000000; }
+            </style>
+        </head>
+        <body>
+            <h2>Resumen Detallado por Día</h2>
+            ${Object.keys(resumen).sort().map(fecha => `
+                <div class="bloque-dia">
+                    <h3>📅 ${fecha}</h3>
+                    ${resumen[fecha].map(p => `
+                        <div class="fila-persona ${p.estado}">
+                            <span>${p.nombre}</span>
+                            <span>${p.hora}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('')}
+        </body>
+        </html>
+    `);
     nuevaVentana.document.close();
 }
 
@@ -567,6 +542,102 @@ function renderTable(data) {
     html += '</table>';
 
     document.getElementById('tableContainer').innerHTML = html;
+}
+
+function abrirVentanaNiveles() {
+    if (!currentData || currentData.length <= 1) return;
+
+    const primariaIDs = [7, 8, 12, 15];
+    
+    const obtenerMinutos = (horaStr) => {
+        let [time, modifier] = horaStr.split(' ');
+        let [hours, minutes, seconds] = time.split(':');
+        hours = parseInt(hours);
+        
+        // Ajuste para formato AM/PM
+        if (modifier === 'p.m.' && hours !== 12) hours += 12;
+        if (modifier === 'a.m.' && hours === 12) hours = 0;
+        
+        return hours * 60 + parseInt(minutes);
+    };
+
+    let primaria = [];
+    let secundaria = [];
+
+    for (let i = 1; i < currentData.length; i++) {
+        let fila = currentData[i];
+        let idEncontrado = Object.keys(nombresMap).find(key => nombresMap[key] === fila[1]);
+        
+        let minutos = obtenerMinutos(fila[3]);
+        
+        // Rangos definidos:
+        // 07:00 - 08:00 (420 - 480 min) -> Temprano
+        // 08:01 - 09:00 (481 - 540 min) -> Tarde
+        // Todo lo demás (hasta las 19:00 / 1140 min) -> Normal
+        let estado = 'normal';
+        if (minutos >= 420 && minutos <= 480) {
+            estado = 'temprano';
+        } else if (minutos > 480 && minutos <= 540) {
+            estado = 'tarde';
+        } else {
+            estado = 'normal';
+        }
+
+        let filaProcesada = {...fila, estado};
+
+        if (primariaIDs.includes(parseInt(idEncontrado))) {
+            primaria.push(filaProcesada);
+        } else {
+            secundaria.push(filaProcesada);
+        }
+    }
+
+    // El resto de la función (generarBloquesPorDia y HTML) se mantiene igual...
+    const generarBloquesPorDia = (lista) => {
+        const grupos = lista.sort((a,b) => new Date(a[2]) - new Date(b[2])).reduce((acc, curr) => {
+            (acc[curr[2]] = acc[curr[2]] || []).push(curr);
+            return acc;
+        }, {});
+
+        return Object.keys(grupos).map(fecha => `
+            <div class="dia-bloque">
+                <h3>📅 ${fecha}</h3>
+                <table>
+                    ${grupos[fecha].map(f => `
+                        <tr class="${f.estado}">
+                            <td>${f[1]}</td>
+                            <td>${f[3]}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            </div>
+        `).join('');
+    };
+
+    let nuevaVentana = window.open('', '_blank', 'width=1100,height=800');
+    nuevaVentana.document.write(`
+        <html>
+        <head>
+            <style>
+                body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+                .grid { display: flex; gap: 20px; }
+                .col { flex: 1; }
+                .dia-bloque { background: white; margin-bottom: 15px; padding: 10px; border-radius: 8px; border-left: 5px solid #6366f1; }
+                table { width: 100%; border-collapse: collapse; font-size: 12px; }
+                .normal { color: #000000; } 
+                .temprano { color: #059669; font-weight: bold; }
+                .tarde { color: #dc2626; font-weight: bold; background: #fee2e2; }
+            </style>
+        </head>
+        <body>
+            <div class="grid">
+                <div class="col"><h2>🏫 PRIMARIA</h2>${generarBloquesPorDia(primaria)}</div>
+                <div class="col"><h2>🎓 SECUNDARIA</h2>${generarBloquesPorDia(secundaria)}</div>
+            </div>
+        </body>
+        </html>
+    `);
+    nuevaVentana.document.close();
 }
     </script>
 </body>
