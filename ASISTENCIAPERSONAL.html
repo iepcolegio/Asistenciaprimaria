@@ -218,80 +218,73 @@
 
        
 document.getElementById('excelFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    
-                    let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    let processedData = [];
-                    mapaColoresFechas = {};
-                    let colorIndex = 0;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            
+            let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            let processedData = [];
+            mapaColoresFechas = {};
+            let colorIndex = 0;
 
-                    rawData.forEach((row, index) => {
-                        if (index === 0) {
-                            // CAMBIO: ID antes de Nombre
-                            processedData.push(["ID", "Nombre", "Fecha", "Hora", "Valor 2da Columna Excel"]);
-                            return;
-                        }
+           rawData.forEach((row, index) => {
+    if (index === 0) {
+        processedData.push(["ID", "Nombre", "Fecha", "Hora Real", "Valor"]);
+        return;
+    }
 
-                        let originalCol0 = row[0];
-                        let originalCol1 = row[1];
-                        
-                        let nombreFinal = nombresMap[originalCol0] ? nombresMap[originalCol0] : (originalCol0 !== undefined ? originalCol0 : "");
+    let originalCol0 = row[0]; // ID
+    let originalCol1 = row[1]; // Fecha
+    let originalCol3 = row[2]; // <--- COLUMNA D
 
-                        let fechaStr = "";
-                        let horaStr = "";
-                        if (originalCol1 instanceof Date && !isNaN(originalCol1.getTime())) {
-                            fechaStr = originalCol1.toLocaleDateString();
-                            horaStr = originalCol1.toLocaleTimeString();
-                        } else if (originalCol1) {
-                            let fechaObj = new Date(originalCol1);
-                            if (!isNaN(fechaObj.getTime())) {
-                                fechaStr = fechaObj.toLocaleDateString();
-                                horaStr = fechaObj.toLocaleTimeString();
-                            } else {
-                                fechaStr = String(originalCol1);
-                            }
-                        }
+    let nombreFinal = nombresMap[originalCol0] ? nombresMap[originalCol0] : (originalCol0 !== undefined ? originalCol0 : "");
 
-                        if (fechaStr && !mapaColoresFechas[fechaStr]) {
-                            mapaColoresFechas[fechaStr] = coloresDias[colorIndex % coloresDias.length];
-                            colorIndex++;
-                        }
-
-                        let idFinal = index; 
-                        let col2OriginalStr = (originalCol1 !== undefined && originalCol1 !== null) ? originalCol1 : "";
-                        if (originalCol1 instanceof Date && !isNaN(originalCol1.getTime())) {
-                            col2OriginalStr = originalCol1.toLocaleString();
-                        }
-
-                        // CAMBIO: ID antes de Nombre en el arreglo de datos
-                        processedData.push([idFinal, nombreFinal, fechaStr, horaStr, col2OriginalStr]);
-                    });
-
-                    currentData = processedData;
-                    filtroActivo = false;
-                    renderTable(currentData);
-
-                    document.getElementById('btnSave').disabled = false;
-                    document.getElementById('btnPrint').disabled = false;
-                    document.getElementById('btnFilter').disabled = false;
-                    document.getElementById('btnResumen').disabled = false;
-
-                } catch (error) {
-                    alert("Error al procesar el archivo Excel.");
-                    console.error(error);
-                }
-            };
-            reader.readAsArrayBuffer(file);
+    // --- NUEVA LÓGICA DE EXTRACCIÓN DE HORA ---
+    let horaRealStr = "";
+    
+    // Si la celda es un objeto fecha, obtenemos la hora
+    if (originalCol3 instanceof Date) {
+        horaRealStr = originalCol3.toLocaleTimeString('es-PE', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
         });
+    } else {
+        // Si no es un objeto fecha, intentamos convertirlo a string directamente
+        // Esto captura el valor tal cual lo ve Excel
+        horaRealStr = String(originalCol3 || "");
+    }
+    // ------------------------------------------
 
+    let fechaStr = originalCol1 instanceof Date ? originalCol1.toLocaleDateString() : String(originalCol1 || "");
+
+    if (fechaStr && !mapaColoresFechas[fechaStr]) {
+        mapaColoresFechas[fechaStr] = coloresDias[Object.keys(mapaColoresFechas).length % coloresDias.length];
+    }
+
+    processedData.push([index, nombreFinal, fechaStr, horaRealStr, originalCol3]);
+});
+
+            currentData = processedData;
+            filtroActivo = false;
+            renderTable(currentData);
+
+            document.getElementById('btnSave').disabled = false;
+            document.getElementById('btnPrint').disabled = false;
+            document.getElementById('btnFilter').disabled = false;
+            document.getElementById('btnResumen').disabled = false;
+
+        } catch (error) {
+            alert("Error al procesar el archivo Excel.");
+            console.error(error);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+});
 
         function renderTable(data) {
             if (!data || data.length === 0) return;
@@ -518,6 +511,62 @@ document.getElementById('excelFile').addEventListener('change', function(e) {
     const newWb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(newWb, newWs, "Hoja1");
     XLSX.writeFile(newWb, "archivo_procesado.xlsx");
+}
+function esTarde(horaTexto) {
+    if (!horaTexto) return false;
+    
+    let lower = String(horaTexto).toLowerCase();
+    // Limpiamos la cadena para obtener solo los números
+    let partes = lower.replace(/am|pm/g, '').trim().split(':');
+    
+    let hora = parseInt(partes[0]) || 0;
+    let minuto = parseInt(partes[1]) || 0;
+    
+    // Ajuste para formato 12h a 24h
+    if (lower.includes('pm') && hora < 12) hora += 12;
+    if (lower.includes('am') && hora === 12) hora = 0;
+    
+    // Retorna true si es tarde (> 8:00)
+    return (hora > 8 || (hora === 8 && minuto > 0));
+}
+
+// --- REEMPLAZA TU FUNCIÓN renderTable ACTUAL POR ESTA ---
+
+function renderTable(data) {
+    if (!data || data.length === 0) return;
+
+    let html = '<table>';
+    data.forEach((row, rowIndex) => {
+        let esTardeRegistro = false;
+
+        // Si es fila de datos (no encabezado), calculamos si es tarde
+        if (rowIndex > 0) {
+            // El índice 3 es la columna D (Hora) según tu procesamiento
+            let horaTexto = row[3]; 
+            esTardeRegistro = esTarde(horaTexto);
+        }
+
+        // Aplicamos la clase CSS highlight-tarde si la función esTarde retorna true
+        let filaClase = esTardeRegistro ? 'class="highlight-tarde"' : '';
+        html += `<tr ${filaClase}>`;
+
+        row.forEach((cell, cellIndex) => {
+            const cellValue = (cell !== undefined && cell !== null) ? cell : '';
+            const tag = rowIndex === 0 ? 'th' : 'td';
+            
+            let estiloCelda = "";
+            // Mantener el resaltado por fechas (columna C) si existe
+            if (cellIndex === 2 && rowIndex > 0 && mapaColoresFechas[cell]) {
+                estiloCelda = `style="background-color: ${mapaColoresFechas[cell]}; font-weight: 500;"`;
+            }
+
+            html += `<${tag} ${estiloCelda}>${cellValue}</${tag}>`;
+        });
+        html += '</tr>';
+    });
+    html += '</table>';
+
+    document.getElementById('tableContainer').innerHTML = html;
 }
     </script>
 </body>
