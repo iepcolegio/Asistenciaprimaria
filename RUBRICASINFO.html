@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informativo - Rúbrica de Evaluación</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+        }
+
+        /* Contenedor principal de 2 columnas */
+        .rubricas-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .columna {
+            flex: 1 1 45%;
+            min-width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Estilo base de los bloques */
+        .rubrica-block {
+            border: 2px solid black;
+            background-color: white;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Encabezados de color */
+        .header {
+            padding: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 15px;
+            border-bottom: 2px solid black;
+            text-transform: uppercase;
+            line-height: 1.3;
+        }
+
+        .header-c1 { background-color: #0099ff; color: black; }
+        .header-c2 { background-color: #ffcc00; color: black; }
+        .header-c3 { background-color: #00aa44; color: black; }
+        .header-c4 { background-color: #ffff00; color: black; }
+        .header-c5 { background-color: #993399; color: white; }
+
+        /* Lista informativa */
+        .criterios-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .criterio-item {
+            display: flex;
+            border-bottom: 1px solid black;
+            min-height: 40px;
+        }
+
+        .criterio-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Texto descriptivo */
+        .criterio-text {
+            flex: 1;
+            padding: 8px 12px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Indicador de Nota */
+        .criterio-grade {
+            width: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            border-left: 1px solid black;
+            font-size: 15px;
+        }
+
+        /* Colores de las notas */
+        .grade-ad { background-color: #0099ff; color: black; }
+        .grade-a  { background-color: #00aa44; color: black; }
+        .grade-b  { background-color: #ffff00; color: black; }
+        .grade-c  { background-color: #ff3333; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>Matriz Informativa de Criterios de Evaluación</h1>
+
+    <div class="rubricas-container">
+        
+        <!-- Columna Izquierda -->
+        <div class="columna">
+            
+            <!-- C1 -->
+            <div class="rubrica-block">
+                <div class="header header-c1">
+                    C1. ORGANIZACION DEL TIEMPO<br>(Auxiliar)
+                </div>
+                <ul class="criterios-list">
+                    <li class="criterio-item">
+                        <div class="criterio-text">0 Faltas. Llega puntual</div>
+                        <div class="criterio-grade grade-ad">AD</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">2 Faltas injustificadas ó de 2 a 4 tardanzas</div>
+                        <div class="criterio-grade grade-a">A</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">4 Faltas injustificadas ó de 5 a 8 tardanzas</div>
+                        <div class="criterio-grade grade-b">B</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Más de 4 faltas injustificadas ó mas de 8 tar</div>
+                        <div class="criterio-grade grade-c">C</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- C2 -->
+            <div class="rubrica-block">
+                <div class="header header-c2">
+                    C2.RESPETA LA IDENTIDAD ROSARINA<br>(Auxiliar)
+                </div>
+                <ul class="criterios-list">
+                    <li class="criterio-item">
+                        <div class="criterio-text">Uso del uniforme, canto del Himno y corte de cabello escolar (siempre)</div>
+                        <div class="criterio-grade grade-ad">AD</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Uso del uniforme, canto del Himno y corte de cabello escolar (Casi siempre)</div>
+                        <div class="criterio-grade grade-a">A</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Uso del uniforme, canto del Himno y corte de cabello escolar (a veces)</div>
+                        <div class="criterio-grade grade-b">B</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Uso del uniforme, canto del Himno y corte de cabello escolar (Nunca)</div>
+                        <div class="criterio-grade grade-c">C</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- C3 -->
+            <div class="rubrica-block">
+                <div class="header header-c3">
+                    C3.CONTRIBUCION AL CUIDADO AMBIENTAL<br>(Dirección)
+                </div>
+                <ul class="criterios-list">
+                    <li class="criterio-item">
+                        <div class="criterio-text">cumple siempre los protocolos y mantiene la limpieza</div>
+                        <div class="criterio-grade grade-ad">AD</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">cumple casi siempre los protocolos y mantiene la limpieza</div>
+                        <div class="criterio-grade grade-a">A</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">cumple a veces los protocolos y mantiene la limpieza</div>
+                        <div class="criterio-grade grade-b">B</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">cumple minimamente los protocolos y mantiene la limpieza</div>
+                        <div class="criterio-grade grade-c">C</div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="columna">
+            
+            <!-- C4 -->
+            <div class="rubrica-block">
+                <div class="header header-c4">
+                    C4.TRATO RESPETUOSO ALA COMUNIDAD EDUCATIVA<br>(TUTORES)
+                </div>
+                <ul class="criterios-list">
+                    <li class="criterio-item">
+                        <div class="criterio-text">Sin informe escrito o verbal</div>
+                        <div class="criterio-grade grade-ad">AD</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Un informe o incidente leve</div>
+                        <div class="criterio-grade grade-a">A</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Dos informes o incidente leve</div>
+                        <div class="criterio-grade grade-b">B</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">3 a 4 informes de incidencias</div>
+                        <div class="criterio-grade grade-c">C</div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- C5 -->
+            <div class="rubrica-block">
+                <div class="header header-c5">
+                    C5.PARTICIPA EN LAS ACTIVIDADES DE LA INSTITUCION FECHAS CIVICAS<br>(TUTORES)
+                </div>
+                <ul class="criterios-list">
+                    <li class="criterio-item">
+                        <div class="criterio-text">Participa en todas las actividades</div>
+                        <div class="criterio-grade grade-ad">AD</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Participa en la mayoría de las actividades</div>
+                        <div class="criterio-grade grade-a">A</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">Participa en algunas de las actividades</div>
+                        <div class="criterio-grade grade-b">B</div>
+                    </li>
+                    <li class="criterio-item">
+                        <div class="criterio-text">No participa en las actividades</div>
+                        <div class="criterio-grade grade-c">C</div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
