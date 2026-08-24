@@ -75,7 +75,7 @@
     <h6>NIVEL SECUNDARIO</h6>
     
     <div class="instruction-note no-print">
-        💡 <strong>Nota:</strong> Haz clic sobre el título de cualquier columna de competencia (C1 a C5) para introducir su contraseña respectiva y habilitar su edición.
+        💡 <strong>Nota:</strong> C1, C2 y C3 tienen contraseña general de columna. <strong>C4 y C5 piden una contraseña distinta según el grado seleccionado</strong>. Haz clic sobre el título de cualquier columna para desbloquearla.
     </div>
 
     <div class="controls no-print">
@@ -205,13 +205,28 @@
     let baseDatos = JSON.parse(JSON.stringify(alumnosPredeterminados));
     const contrasenasGrado = { "1":"primero", "2":"segundo", "3":"tercero", "4":"cuarto", "5":"quinto" };
     
-    // --- CONTRASEÑAS INDEPENDIENTES PARA CADA COLUMNA ---
+    // --- CONTRASEÑAS PARA C1, C2 y C3 (Generales de columna) ---
     const contrasenasColumnas = {
         "c1": "claveC1",
-        "c2": "angel866",
-        "c3": "claveC3",
-        "c4": "colegio",
-        "c5": "claveC5"
+        "c2": "claveC2",
+        "c3": "claveC3"
+    };
+
+    // --- CONTRASEÑAS DIFERENTES POR GRADO PARA C4 y C5 ---
+    const contrasenasC4PorGrado = {
+        "1": "hilda",
+        "2": "richard",
+        "3": "ruben",
+        "4": "crecencio",
+        "5": "katya"
+    };
+
+    const contrasenasC5PorGrado = {
+        "1": "hilda",
+        "2": "richard",
+        "3": "ruben",
+        "4": "crecencio",
+        "5": "katya"
     };
 
     let columnasHabilitadas = {
@@ -247,13 +262,25 @@
             alert(`La columna ${nombreColumna} ya se encuentra habilitada.`);
             return;
         }
-        const pass = prompt(`Ingrese la contraseña para desbloquear la columna "${nombreColumna}":`);
-        if (pass === contrasenasColumnas[campo]) {
+
+        let passwordEsperada = "";
+
+        if (campo === "c4") {
+            passwordEsperada = contrasenasC4PorGrado[gradoActual];
+        } else if (campo === "c5") {
+            passwordEsperada = contrasenasC5PorGrado[gradoActual];
+        } else {
+            passwordEsperada = contrasenasColumnas[campo];
+        }
+
+        const pass = prompt(`Ingrese la contraseña para desbloquear la columna "${nombreColumna}" (${gradoActual}° Grado):`);
+        
+        if (pass === passwordEsperada) {
             columnasHabilitadas[campo] = true;
             cargarDatos();
-            alert(`¡Columna ${nombreColumna} habilitada exitosamente!`);
+            alert(`¡Columna ${nombreColumna} habilitada exitosamente para ${gradoActual}° grado!`);
         } else {
-            alert("Contraseña incorrecta para esta columna.");
+            alert("Contraseña incorrecta para esta columna y grado.");
         }
     }
 
