@@ -19,6 +19,8 @@
             --info-hover: #0369a1;
             --matrix-color: #6366f1;
             --matrix-hover: #4f46e5;
+            --niveles-color: #0d9488;
+            --niveles-hover: #0f766e;
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --text-color: #1e293b;
@@ -115,6 +117,9 @@
         #btnMatriz { background-color: var(--matrix-color); }
         #btnMatriz:hover { background-color: var(--matrix-hover); }
 
+        #btnNiveles { background-color: var(--niveles-color); }
+        #btnNiveles:hover { background-color: var(--niveles-hover); }
+
         button:disabled {
             background-color: #94a3b8;
             cursor: not-allowed;
@@ -191,6 +196,7 @@
                 <button id="btnFilter" onclick="toggleFiltro8AM()" disabled>Agrupar por Nombres</button>
                 <button id="btnResumen" onclick="abrirVentanaResumen()" disabled>Ver Resumen por Días</button>
                 <button id="btnMatriz" onclick="abrirMatrizAsistencia()" disabled>Matriz A/T/F</button>
+                <button id="btnNiveles" onclick="abrirVentanaPorNiveles()" disabled>Por Niveles</button>
             </div>
         </div>
 
@@ -290,6 +296,7 @@
                     document.getElementById('btnFilter').disabled = false;
                     document.getElementById('btnResumen').disabled = false;
                     document.getElementById('btnMatriz').disabled = false;
+                    document.getElementById('btnNiveles').disabled = false;
 
                 } catch (error) {
                     alert("Error al procesar el archivo Excel.");
@@ -336,6 +343,122 @@
             document.getElementById('tableContainer').innerHTML = html;
         }
 
+        function abrirVentanaPorNiveles() {
+            if (!currentData || currentData.length <= 1) return;
+
+            let filasDatos = currentData.slice(1);
+            let datosPrimariaPorFecha = {};
+            let datosSecundariaPorFecha = {};
+
+            filasDatos.forEach(fila => {
+                let nombreFila = fila[1];
+                let fechaFila = fila[2];
+                let idEncontrado = null;
+                
+                for (let id in nombresMap) {
+                    if (nombresMap[id] === nombreFila) {
+                        idEncontrado = parseInt(id);
+                        break;
+                    }
+                }
+
+                if (idEncontrado !== null && fechaFila) {
+                    if (primariaIDs.includes(idEncontrado)) {
+                        if (!datosPrimariaPorFecha[fechaFila]) datosPrimariaPorFecha[fechaFila] = [];
+                        datosPrimariaPorFecha[fechaFila].push(fila);
+                    } else {
+                        if (!datosSecundariaPorFecha[fechaFila]) datosSecundariaPorFecha[fechaFila] = [];
+                        datosSecundariaPorFecha[fechaFila].push(fila);
+                    }
+                }
+            });
+
+            let fechasUnicas = [...new Set([...Object.keys(datosPrimariaPorFecha), ...Object.keys(datosSecundariaPorFecha)])];
+            fechasUnicas.sort((a, b) => {
+                let partsA = a.split('/');
+                let partsB = b.split('/');
+                if (partsA.length === 3 && partsB.length === 3) {
+                    return new Date(partsA[2], partsA[1]-1, partsA[0]) - new Date(partsB[2], partsB[1]-1, partsB[0]);
+                }
+                return new Date(a) - new Date(b);
+            });
+
+            const generarBloquesPorDia = (datosPorFecha, esPrimaria) => {
+                if (Object.keys(datosPorFecha).length === 0) return '<p style="color: #64748b; font-style: italic;">No hay registros.</p>';
+                
+                let htmlAcumulado = '';
+                fechasUnicas.forEach(fecha => {
+                    let filasDia = datosPorFecha[fecha];
+                    if (!filasDia || filasDia.length === 0) return;
+
+                    htmlAcumulado += `<div class="dia-bloque">`;
+                    htmlAcumulado += `<h4 class="fecha-titulo">📅 ${fecha}</h4>`;
+                    htmlAcumulado += `<table><thead><tr><th>ID</th><th>Nombre</th><th>Hora Real</th></tr></thead><tbody>`;
+
+                    filasDia.forEach(f => {
+                        let horaStr = f[3];
+                        let minutos = convertirHoraAMinutos(horaStr);
+                        let estiloFila = '';
+
+                        if (esPrimaria) {
+                            // Primaria: <= 8:00 AM (480 minutos) en Verde, > 8:00 AM en Rojo
+                            if (minutos <= 480) {
+                                estiloFila = 'style="background-color: #f0fdf4; color: #16a34a; font-weight: bold;"'; // Verde
+                            } else {
+                                estiloFila = 'style="background-color: #fef2f2; color: #dc2626; font-weight: bold;"'; // Rojo
+                            }
+                        } else {
+                            // Secundaria: Mantiene su alerta estándar de tardanza (> 8:00 AM)
+                            let esTardeSec = esTardeGenerica(horaStr);
+                            if (esTardeSec) {
+                                estiloFila = 'style="background-color: #fef3c7;"';
+                            }
+                        }
+
+                        htmlAcumulado += `<tr ${estiloFila}><td>${f[0]}</td><td>${f[1]}</td><td>${horaStr}</td></tr>`;
+                    });
+
+                    htmlAcumulado += `</tbody></table></div>`;
+                });
+                return htmlAcumulado;
+            };
+
+            let nuevaVentana = window.open('', '_blank', 'width=1300,height=800');
+            nuevaVentana.document.write(`
+                <html>
+                <head>
+                    <title>Asistencias por Niveles (Separados por Días)</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; }
+                        h2 { text-align: center; color: #2563eb; margin-bottom: 25px; }
+                        .container-grid { display: flex; gap: 20px; width: 100%; }
+                        .columna-nivel { flex: 1; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); overflow-y: auto; max-height: 75vh; }
+                        .titulo-nivel { margin-top: 0; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; font-size: 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; background: white; z-index: 5; }
+                        .dia-bloque { margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; background: #ffffff; }
+                        .fecha-titulo { margin: 0 0 8px 0; font-size: 14px; color: #475569; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; }
+                        th { background: #f8fafc; color: #475569; }
+                    </style>
+                </head>
+                <body>
+                    <h2>REGISTROS DE ASISTENCIA SEPARADOS POR NIVELES Y DÍAS</h2>
+                    <div class="container-grid">
+                        <div class="columna-nivel">
+                            <h3 class="titulo-nivel" style="color: #0d9488;">🏫 NIVEL PRIMARIA (Verde: ≤ 8am | Rojo: > 8am)</h3>
+                            ${generarBloquesPorDia(datosPrimariaPorFecha, true)}
+                        </div>
+                        <div class="columna-nivel">
+                            <h3 class="titulo-nivel" style="color: #7c3aed;">🎓 NIVEL SECUNDARIA</h3>
+                            ${generarBloquesPorDia(datosSecundariaPorFecha, false)}
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
+            nuevaVentana.document.close();
+        }
+
         function convertirHoraAMinutos(horaStr) {
             if (!horaStr) return 0;
             let lower = String(horaStr).toLowerCase().trim();
@@ -358,7 +481,7 @@
             return hours * 60 + minutes;
         }
 
-       function abrirMatrizAsistencia() {
+        function abrirMatrizAsistencia() {
             if (!currentData || currentData.length <= 1) return;
 
             let fechasUnicas = [...new Set(currentData.slice(1).map(r => r[2]))].filter(Boolean);
@@ -403,7 +526,7 @@
                     if (nombreKey && horariosDocentes[nombreKey][diaSemana]) {
                         horaProgramadaStr = horariosDocentes[nombreKey][diaSemana];
                     } else {
-                        horaProgramadaStr = "8:00"; // Por defecto 8:00 AM
+                        horaProgramadaStr = "8:00"; 
                     }
 
                     let minutosProgramados = convertirHoraAMinutos(horaProgramadaStr);
@@ -442,7 +565,6 @@
                 let html = `<h3>${tituloNivel}</h3>`;
                 html += `<div style="overflow-x: auto;"><table class="matriz-table">`;
                 
-                // --- FILA 1: DÍAS DE LA SEMANA ---
                 html += `<thead><tr><th style="background-color: #e2e8f0; text-align: center;">Día</th>`;
                 fechasUnicas.forEach(f => {
                     let partesF = f.split('/');
@@ -452,7 +574,6 @@
                 });
                 html += `</tr>`;
 
-                // --- FILA 2: FECHAS ---
                 html += `<tr><th>Docente</th>`;
                 fechasUnicas.forEach(f => {
                     html += `<th>${f}</th>`;
