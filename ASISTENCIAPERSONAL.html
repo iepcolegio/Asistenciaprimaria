@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visualizador y Editor de Excel Dinámico</title>
+    <title>Visualizador y Editor de Excel Dinámico - Matriz de Asistencia</title>
     <!-- Librería SheetJS para leer y escribir Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -17,6 +17,8 @@
             --warning-hover: #b45309;
             --info-color: #0284c7;
             --info-hover: #0369a1;
+            --matrix-color: #6366f1;
+            --matrix-hover: #4f46e5;
             --bg-color: #f8fafc;
             --card-bg: #ffffff;
             --text-color: #1e293b;
@@ -37,7 +39,7 @@
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1100px;
             background: var(--card-bg);
             padding: 30px;
             border-radius: 12px;
@@ -109,6 +111,9 @@
 
         #btnResumen { background-color: var(--info-color); }
         #btnResumen:hover { background-color: var(--info-hover); }
+
+        #btnMatriz { background-color: var(--matrix-color); }
+        #btnMatriz:hover { background-color: var(--matrix-hover); }
 
         button:disabled {
             background-color: #94a3b8;
@@ -185,10 +190,7 @@
                 <button id="btnPrint" onclick="imprimirVentana()" disabled>Imprimir</button>
                 <button id="btnFilter" onclick="toggleFiltro8AM()" disabled>Agrupar por Nombres</button>
                 <button id="btnResumen" onclick="abrirVentanaResumen()" disabled>Ver Resumen por Días</button>
-                <div class="btn-group">
-    <!-- ... botones existentes ... -->
-    <button id="btnNiveles" onclick="abrirVentanaNiveles()" disabled style="background-color: #6366f1;">Ver por Niveles</button>
-</div>
+                <button id="btnMatriz" onclick="abrirMatrizAsistencia()" disabled>Matriz A/T/F</button>
             </div>
         </div>
 
@@ -211,434 +213,415 @@
             29: "Maribel Francia Calagua", 30: "Raquel Avalos Chumpitaz"
         };
 
+        const primariaIDs = [7, 8, 12, 15, 21, 23, 24, 25, 27, 28, 29, 30];
+
+        const horariosDocentes = {
+            "WILLIAM GARCIA RAMOS": { 1: "8:00", 2: "8:00", 3: "8:00", 4: "8:00", 5: "8:00" },
+            "FRANCISCO EMERSON ALVAREZ HOLGUIN": { 1: "9:30", 2: "9:30", 3: "8:45", 4: "8:00", 5: "8:45" },
+            "CRECENCIO SAAVEDRA FERRER": { 1: "8:00", 2: "8:00", 3: "8:00", 4: "8:00", 5: "8:00" },
+            "RICHARD CALAGUA LA ROSA": { 1: "8:00", 2: "8:00", 3: "8:00", 4: "1:55", 5: "8:00" },
+            "RUBEN AURIS PARIONA": { 1: "8:00", 2: "8:00", 3: "8:00", 4: "8:00", 5: "8:00" },
+            "GERARDO YEREN BAUTISTA": { 2: "8:00", 3: "8:00", 4: "8:00", 5: "9:30" },
+            "BENITO QUISPE ARIAS": { 1: "8:00", 5: "11:55" },
+            "KATHIA ESPINOZA FALCON": { 1: "10:15", 2: "8:00", 3: "11:10", 4: "8:00", 5: "10:15" },
+            "HILDA HUAPAYA MANCO": { 1: "9:30", 3: "11:10", 5: "9:30" },
+            "ROSIO SOLIS MALLMA": { 3: "8:00", 4: "9:30", 5: "8:00" },
+            "DORIS DONAYRE SOLIS": { 2: "10:15", 4: "10:15" },
+            "PABLO ECHEANDIA MARTINEZ": { 1: "8:00", 3: "10:15" },
+            "JUDITH PACHECO GARCIA": { 1: "10:15", 2: "11:10", 3: "10:15", 4: "10:15" }
+        };
+
         let currentData = null;
         let filtroActivo = false;
-
-        const coloresDias = [
-            "#dbeafe", "#dcfce7", "#f3e8ff", "#ffedd5", "#fee2e2", "#fef9c3", "#ccfbf1"
-        ];
-        
         let mapaColoresFechas = {};
+        const coloresDias = ["#dbeafe", "#dcfce7", "#f3e8ff", "#ffedd5", "#fee2e2", "#fef9c3", "#ccfbf1"];
 
-       
-document.getElementById('excelFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+        document.getElementById('excelFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array', cellDates: true });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            
-            let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            let processedData = [];
-            mapaColoresFechas = {};
-            let colorIndex = 0;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    
+                    let rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    let processedData = [];
+                    mapaColoresFechas = {};
 
-           rawData.forEach((row, index) => {
-    if (index === 0) {
-        processedData.push(["ID", "Nombre", "Fecha", "Hora Real", "Valor"]);
-        return;
-    }
+                    rawData.forEach((row, index) => {
+                        if (index === 0) {
+                            processedData.push(["ID", "Nombre", "Fecha", "Hora Real", "Valor"]);
+                            return;
+                        }
 
-    let originalCol0 = row[0]; // ID
-    let originalCol1 = row[1]; // Fecha
-    let originalCol3 = row[2]; // <--- COLUMNA D
+                        let originalCol0 = row[0];
+                        let originalCol1 = row[1];
+                        let originalCol3 = row[2];
 
-    let nombreFinal = nombresMap[originalCol0] ? nombresMap[originalCol0] : (originalCol0 !== undefined ? originalCol0 : "");
+                        let nombreFinal = nombresMap[originalCol0] ? nombresMap[originalCol0] : (originalCol0 !== undefined ? originalCol0 : "");
 
-    // --- NUEVA LÓGICA DE EXTRACCIÓN DE HORA ---
-    let horaRealStr = "";
-    
-    // Si la celda es un objeto fecha, obtenemos la hora
-    if (originalCol3 instanceof Date) {
-        horaRealStr = originalCol3.toLocaleTimeString('es-PE', { 
-            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
+                        let horaRealStr = "";
+                        if (originalCol3 instanceof Date) {
+                            horaRealStr = originalCol3.toLocaleTimeString('es-PE', { 
+                                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
+                            });
+                        } else {
+                            horaRealStr = String(originalCol3 || "");
+                        }
+
+                        let fechaStr = originalCol1 instanceof Date ? originalCol1.toLocaleDateString() : String(originalCol1 || "");
+
+                        if (fechaStr && !mapaColoresFechas[fechaStr]) {
+                            mapaColoresFechas[fechaStr] = coloresDias[Object.keys(mapaColoresFechas).length % coloresDias.length];
+                        }
+
+                        processedData.push([index, nombreFinal, fechaStr, horaRealStr, originalCol3]);
+                    });
+
+                    currentData = processedData;
+                    filtroActivo = false;
+                    renderTable(currentData);
+
+                    document.getElementById('btnSave').disabled = false;
+                    document.getElementById('btnPrint').disabled = false;
+                    document.getElementById('btnFilter').disabled = false;
+                    document.getElementById('btnResumen').disabled = false;
+                    document.getElementById('btnMatriz').disabled = false;
+
+                } catch (error) {
+                    alert("Error al procesar el archivo Excel.");
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
         });
-    } else {
-        // Si no es un objeto fecha, intentamos convertirlo a string directamente
-        // Esto captura el valor tal cual lo ve Excel
-        horaRealStr = String(originalCol3 || "");
-    }
-    // ------------------------------------------
 
-    let fechaStr = originalCol1 instanceof Date ? originalCol1.toLocaleDateString() : String(originalCol1 || "");
-
-    if (fechaStr && !mapaColoresFechas[fechaStr]) {
-        mapaColoresFechas[fechaStr] = coloresDias[Object.keys(mapaColoresFechas).length % coloresDias.length];
-    }
-
-    processedData.push([index, nombreFinal, fechaStr, horaRealStr, originalCol3]);
-});
-
-            currentData = processedData;
-            filtroActivo = false;
-            renderTable(currentData);
-
-            document.getElementById('btnSave').disabled = false;
-            document.getElementById('btnPrint').disabled = false;
-            document.getElementById('btnFilter').disabled = false;
-            document.getElementById('btnResumen').disabled = false;
-            document.getElementById('btnNiveles').disabled = false;
-
-        } catch (error) {
-            alert("Error al procesar el archivo Excel.");
-            console.error(error);
+        function esTardeGenerica(horaTexto) {
+            if (!horaTexto) return false;
+            let lower = String(horaTexto).toLowerCase();
+            let partes = lower.replace(/am|pm|a\.m\.|p\.m\./g, '').trim().split(':');
+            let hora = parseInt(partes[0]) || 0;
+            let minuto = parseInt(partes[1]) || 0;
+            if ((lower.includes('pm') || lower.includes('p.m.')) && hora < 12) hora += 12;
+            if ((lower.includes('am') || lower.includes('a.m.')) && hora === 12) hora = 0;
+            return (hora > 8 || (hora === 8 && minuto > 0));
         }
-    };
-    reader.readAsArrayBuffer(file);
-});
 
         function renderTable(data) {
             if (!data || data.length === 0) return;
-
             let html = '<table>';
             data.forEach((row, rowIndex) => {
-                let esTarde = false;
-
-                if (rowIndex > 0 && filtroActivo) {
-                    let horaTexto = row[2];
-                    if (horaTexto) {
-                        let [hora, minuto, segundo] = horaTexto.split(':').map(Number);
-                        let esPM = horaTexto.toLowerCase().includes('pm');
-                        let esAM = horaTexto.toLowerCase().includes('am');
-
-                        if (esPM && hora < 12) hora += 12;
-                        if (esAM && hora === 12) hora = 0;
-
-                        if (hora > 8 || (hora === 8 && (minuto > 0 || (segundo > 0)))) {
-                            esTarde = true;
-                        }
-                    }
+                let esTardeRegistro = false;
+                if (rowIndex > 0) {
+                    esTardeRegistro = esTardeGenerica(row[3]);
                 }
-
-                let filaClase = esTarde ? 'class="highlight-tarde"' : '';
+                let filaClase = esTardeRegistro ? 'class="highlight-tarde"' : '';
                 html += `<tr ${filaClase}>`;
 
                 row.forEach((cell, cellIndex) => {
                     const cellValue = (cell !== undefined && cell !== null) ? cell : '';
                     const tag = rowIndex === 0 ? 'th' : 'td';
-                    
                     let estiloCelda = "";
-                    if (cellIndex === 1 && rowIndex > 0 && mapaColoresFechas[cell]) {
+                    if (cellIndex === 2 && rowIndex > 0 && mapaColoresFechas[cell]) {
                         estiloCelda = `style="background-color: ${mapaColoresFechas[cell]}; font-weight: 500;"`;
                     }
-
                     html += `<${tag} ${estiloCelda}>${cellValue}</${tag}>`;
                 });
                 html += '</tr>';
             });
             html += '</table>';
-
             document.getElementById('tableContainer').innerHTML = html;
         }
 
-   function toggleFiltro8AM() {
-   
-    if (!currentData || currentData.length <= 1) return;
+        function convertirHoraAMinutos(horaStr) {
+            if (!horaStr) return 0;
+            let lower = String(horaStr).toLowerCase().trim();
+            let partes = lower.replace(/am|pm|a\.m\.|p\.m\./g, '').trim().split(':');
+            let hours = parseInt(partes[0]) || 0;
+            let minutes = parseInt(partes[1]) || 0;
 
-    const obtenerMinutos = (horaStr) => {
-        let [time, modifier] = horaStr.split(' ');
-        let [hours, minutes, seconds] = time.split(':');
-        hours = parseInt(hours);
-        if (modifier === 'p.m.' && hours !== 12) hours += 12;
-        if (modifier === 'a.m.' && hours === 12) hours = 0;
-        return hours * 60 + parseInt(minutes);
-    };
+            let esPM = lower.includes('pm') || lower.includes('p.m.');
+            let esAM = lower.includes('am') || lower.includes('a.m.');
 
-    // Agrupamos por nombre
-    const agrupado = currentData.slice(1).reduce((acc, fila) => {
-        let nombre = fila[1];
-        let minutos = obtenerMinutos(fila[3]);
-
-        // Nueva lógica de estados
-        let estado = 'REGULAR';
-        let clase = 'normal';
-
-        if (minutos >= 360 && minutos <= 480) { // 6:00 AM - 8:00 AM
-            estado = 'TEMPRANO';
-            clase = 'temprano';
-        } else if (minutos > 480 && minutos <= 540) { // 8:01 AM - 9:00 AM
-            estado = 'TARDE';
-            clase = 'tarde';
-        }
-
-        if (!acc[nombre]) acc[nombre] = [];
-        acc[nombre].push({ fecha: fila[2], hora: fila[3], estado: estado, clase: clase });
-        return acc;
-    }, {});
-
-    let nuevaVentana = window.open('', '_blank', 'width=900,height=800');
-    nuevaVentana.document.write(`
-        <html>
-        <head>
-            <style>
-                body { font-family: sans-serif; padding: 20px; }
-                .tarjeta-nombre { margin-bottom: 25px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
-                table { width: 100%; border-collapse: collapse; }
-                th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
-                .temprano { color: #059669; font-weight: bold; }
-                .tarde { color: #dc2626; font-weight: bold; }
-                .normal { color: #000000; }
-            </style>
-        </head>
-        <body>
-            <h2>Registros Agrupados por Nombre</h2>
-            ${Object.keys(agrupado).sort().map(nombre => `
-                <div class="tarjeta-nombre">
-                    <h3>👤 ${nombre}</h3>
-                    <table>
-                        <tr><th>Fecha</th><th>Hora</th><th>Estado</th></tr>
-                        ${agrupado[nombre].map(reg => `
-                            <tr class="${reg.clase}">
-                                <td>${reg.fecha}</td>
-                                <td>${reg.hora}</td>
-                                <td>${reg.estado}</td>
-                            </tr>
-                        `).join('')}
-                    </table>
-                </div>
-            `).join('')}
-        </body>
-        </html>
-    `);
-    nuevaVentana.document.close();
-}
-    function abrirVentanaResumen() {
-   if (!currentData || currentData.length <= 1) return;
-
-    const obtenerMinutos = (horaStr) => {
-        let [time, modifier] = horaStr.split(' ');
-        let [hours, minutes, seconds] = time.split(':');
-        hours = parseInt(hours);
-        if (modifier === 'p.m.' && hours !== 12) hours += 12;
-        if (modifier === 'a.m.' && hours === 12) hours = 0;
-        return hours * 60 + parseInt(minutes);
-    };
-
-    // Agrupamos filas completas por fecha
-    const resumen = currentData.slice(1).reduce((acc, fila) => {
-        let fecha = fila[2];
-        let minutos = obtenerMinutos(fila[3]);
-
-        let estado = 'normal';
-        if (minutos >= 420 && minutos <= 480) estado = 'temprano';      // 7-8 AM
-        else if (minutos > 480 && minutos <= 540) estado = 'tarde';    // 8-9 AM
-        else estado = 'normal';                                        // 9 AM - 7 PM
-
-        if (!acc[fecha]) acc[fecha] = [];
-        acc[fecha].push({ nombre: fila[1], hora: fila[3], estado: estado });
-        return acc;
-    }, {});
-
-    let nuevaVentana = window.open('', '_blank', 'width=800,height=800');
-    nuevaVentana.document.write(`
-        <html>
-        <head>
-            <style>
-                body { font-family: sans-serif; padding: 20px; background: #f8fafc; }
-                .bloque-dia { background: white; margin-bottom: 20px; padding: 15px; border-radius: 8px; border-left: 5px solid #4f46e5; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-                h3 { margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-                .fila-persona { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
-                .temprano { color: #059669; font-weight: bold; }
-                .tarde { color: #dc2626; font-weight: bold; }
-                .normal { color: #000000; }
-            </style>
-        </head>
-        <body>
-            <h2>Resumen Detallado por Día</h2>
-            ${Object.keys(resumen).sort().map(fecha => `
-                <div class="bloque-dia">
-                    <h3>📅 ${fecha}</h3>
-                    ${resumen[fecha].map(p => `
-                        <div class="fila-persona ${p.estado}">
-                            <span>${p.nombre}</span>
-                            <span>${p.hora}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('')}
-        </body>
-        </html>
-    `);
-    nuevaVentana.document.close();
-}
-
-
-       function guardarExcel() {
-    if (!currentData) return;
-    
-    // Crear la hoja de trabajo
-    const newWs = XLSX.utils.aoa_to_sheet(currentData);
-    
-    // Configurar el ancho de las columnas (índice 0-based: A=0, B=1, C=2, D=3, E=4)
-    // { wch: 23 } significa un ancho de 23 caracteres
-    newWs['!cols'] = [
-        { wch: 10 }, // Columna A (ID)
-        { wch: 23 }, // Columna B (Nombre) - Ajustado a 23
-        { wch: 15 }, // Columna C
-        { wch: 15 }, // Columna D
-        { wch: 23 }  // Columna E (Valor) - Ajustado a 23
-    ];
-    
-    const newWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(newWb, newWs, "Hoja1");
-    XLSX.writeFile(newWb, "archivo_procesado.xlsx");
-}
-function esTarde(horaTexto) {
-    if (!horaTexto) return false;
-    
-    let lower = String(horaTexto).toLowerCase();
-    // Limpiamos la cadena para obtener solo los números
-    let partes = lower.replace(/am|pm/g, '').trim().split(':');
-    
-    let hora = parseInt(partes[0]) || 0;
-    let minuto = parseInt(partes[1]) || 0;
-    
-    // Ajuste para formato 12h a 24h
-    if (lower.includes('pm') && hora < 12) hora += 12;
-    if (lower.includes('am') && hora === 12) hora = 0;
-    
-    // Retorna true si es tarde (> 8:00)
-    return (hora > 8 || (hora === 8 && minuto > 0));
-}
-
-// --- REEMPLAZA TU FUNCIÓN renderTable ACTUAL POR ESTA ---
-
-function renderTable(data) {
-    if (!data || data.length === 0) return;
-
-    let html = '<table>';
-    data.forEach((row, rowIndex) => {
-        let esTardeRegistro = false;
-
-        // Si es fila de datos (no encabezado), calculamos si es tarde
-        if (rowIndex > 0) {
-            // El índice 3 es la columna D (Hora) según tu procesamiento
-            let horaTexto = row[3]; 
-            esTardeRegistro = esTarde(horaTexto);
-        }
-
-        // Aplicamos la clase CSS highlight-tarde si la función esTarde retorna true
-        let filaClase = esTardeRegistro ? 'class="highlight-tarde"' : '';
-        html += `<tr ${filaClase}>`;
-
-        row.forEach((cell, cellIndex) => {
-            const cellValue = (cell !== undefined && cell !== null) ? cell : '';
-            const tag = rowIndex === 0 ? 'th' : 'td';
-            
-            let estiloCelda = "";
-            // Mantener el resaltado por fechas (columna C) si existe
-            if (cellIndex === 2 && rowIndex > 0 && mapaColoresFechas[cell]) {
-                estiloCelda = `style="background-color: ${mapaColoresFechas[cell]}; font-weight: 500;"`;
+            if (hours >= 1 && hours <= 6 && !esAM && !esPM) {
+                if (hours < 7) {
+                    hours += 12;
+                }
+            } else {
+                if (esPM && hours !== 12) hours += 12;
+                if (esAM && hours === 12) hours = 0;
             }
 
-            html += `<${tag} ${estiloCelda}>${cellValue}</${tag}>`;
-        });
-        html += '</tr>';
-    });
-    html += '</table>';
-
-    document.getElementById('tableContainer').innerHTML = html;
-}
-
-function abrirVentanaNiveles() {
-    if (!currentData || currentData.length <= 1) return;
-
-    const primariaIDs = [7, 8, 12, 15, 21, 23, 24, 25, 27, 28, 29, 30];
-    
-    const obtenerMinutos = (horaStr) => {
-        let [time, modifier] = horaStr.split(' ');
-        let [hours, minutes, seconds] = time.split(':');
-        hours = parseInt(hours);
-        
-        // Ajuste para formato AM/PM
-        if (modifier === 'p.m.' && hours !== 12) hours += 12;
-        if (modifier === 'a.m.' && hours === 12) hours = 0;
-        
-        return hours * 60 + parseInt(minutes);
-    };
-
-    let primaria = [];
-    let secundaria = [];
-
-    for (let i = 1; i < currentData.length; i++) {
-        let fila = currentData[i];
-        let idEncontrado = Object.keys(nombresMap).find(key => nombresMap[key] === fila[1]);
-        
-        let minutos = obtenerMinutos(fila[3]);
-        
-        // Rangos definidos:
-        // 07:00 - 08:00 (420 - 480 min) -> Temprano
-        // 08:01 - 09:00 (481 - 540 min) -> Tarde
-        // Todo lo demás (hasta las 19:00 / 1140 min) -> Normal
-        let estado = 'normal';
-        if (minutos >= 420 && minutos <= 480) {
-            estado = 'temprano';
-        } else if (minutos > 480 && minutos <= 540) {
-            estado = 'tarde';
-        } else {
-            estado = 'normal';
+            return hours * 60 + minutes;
         }
 
-        let filaProcesada = {...fila, estado};
+       function abrirMatrizAsistencia() {
+            if (!currentData || currentData.length <= 1) return;
 
-        if (primariaIDs.includes(parseInt(idEncontrado))) {
-            primaria.push(filaProcesada);
-        } else {
-            secundaria.push(filaProcesada);
+            let fechasUnicas = [...new Set(currentData.slice(1).map(r => r[2]))].filter(Boolean);
+            fechasUnicas.sort((a, b) => {
+                let partsA = a.split('/');
+                let partsB = b.split('/');
+                if (partsA.length === 3 && partsB.length === 3) {
+                    return new Date(partsA[2], partsA[1]-1, partsA[0]) - new Date(partsB[2], partsB[1]-1, partsB[0]);
+                }
+                return new Date(a) - new Date(b);
+            });
+
+            let registrosPorPersonaFecha = {};
+            currentData.slice(1).forEach(fila => {
+                let nombre = fila[1];
+                let fecha = fila[2];
+                let horaReal = fila[3];
+                if (!nombre || !fecha) return;
+
+                if (!registrosPorPersonaFecha[nombre]) registrosPorPersonaFecha[nombre] = {};
+                if (!registrosPorPersonaFecha[nombre][fecha]) {
+                    registrosPorPersonaFecha[nombre][fecha] = [];
+                }
+                registrosPorPersonaFecha[nombre][fecha].push(horaReal);
+            });
+
+            let asistenciaFinalMap = {};
+
+            Object.keys(nombresMap).forEach(id => {
+                let nombre = nombresMap[id];
+                asistenciaFinalMap[nombre] = {};
+
+                fechasUnicas.forEach(fecha => {
+                    let partesF = fecha.split('/');
+                    let fechaObj = partesF.length === 3 ? new Date(partesF[2], partesF[1]-1, partesF[0]) : new Date(fecha);
+                    let diaSemana = fechaObj.getDay();
+
+                    if (diaSemana === 0 || diaSemana === 6) return;
+
+                    let nombreKey = Object.keys(horariosDocentes).find(k => nombre.toUpperCase().includes(k));
+                    let horaProgramadaStr = null;
+                    if (nombreKey && horariosDocentes[nombreKey][diaSemana]) {
+                        horaProgramadaStr = horariosDocentes[nombreKey][diaSemana];
+                    } else {
+                        horaProgramadaStr = "8:00"; // Por defecto 8:00 AM
+                    }
+
+                    let minutosProgramados = convertirHoraAMinutos(horaProgramadaStr);
+                    let marcasDia = registrosPorPersonaFecha[nombre] ? registrosPorPersonaFecha[nombre][fecha] : null;
+
+                    if (!marcasDia || marcasDia.length === 0) {
+                        asistenciaFinalMap[nombre][fecha] = { estado: 'F', hora: '-' };
+                    } else {
+                        marcasDia.sort((m1, m2) => convertirHoraAMinutos(m1) - convertirHoraAMinutos(m2));
+                        let primeraMarca = marcasDia[0];
+                        let minutosPrimeraMarca = convertirHoraAMinutos(primeraMarca);
+
+                        if (minutosPrimeraMarca > minutosProgramados) {
+                            asistenciaFinalMap[nombre][fecha] = { estado: 'T', hora: primeraMarca };
+                        } else {
+                            asistenciaFinalMap[nombre][fecha] = { estado: 'A', hora: primeraMarca };
+                        }
+                    }
+                });
+            });
+
+            let listaPrimaria = [];
+            let listaSecundaria = [];
+            Object.keys(nombresMap).forEach(id => {
+                let nombre = nombresMap[id];
+                if (primariaIDs.includes(parseInt(id))) {
+                    listaPrimaria.push(nombre);
+                } else {
+                    listaSecundaria.push(nombre);
+                }
+            });
+
+            const diasSemanaNombres = ["DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"];
+
+            const construirTablaMatriz = (docentesNivel, tituloNivel) => {
+                let html = `<h3>${tituloNivel}</h3>`;
+                html += `<div style="overflow-x: auto;"><table class="matriz-table">`;
+                
+                // --- FILA 1: DÍAS DE LA SEMANA ---
+                html += `<thead><tr><th style="background-color: #e2e8f0; text-align: center;">Día</th>`;
+                fechasUnicas.forEach(f => {
+                    let partesF = f.split('/');
+                    let fechaObj = partesF.length === 3 ? new Date(partesF[2], partesF[1]-1, partesF[0]) : new Date(f);
+                    let nombreDia = diasSemanaNombres[fechaObj.getDay()] || "";
+                    html += `<th style="text-align: center; background-color: #f8fafc; font-size: 12px; color: #64748b;">${nombreDia}</th>`;
+                });
+                html += `</tr>`;
+
+                // --- FILA 2: FECHAS ---
+                html += `<tr><th>Docente</th>`;
+                fechasUnicas.forEach(f => {
+                    html += `<th>${f}</th>`;
+                });
+                html += `</tr></thead><tbody>`;
+
+                docentesNivel.forEach(docente => {
+                    html += `<tr><td style="font-weight: 600; white-space: nowrap;">${docente}</td>`;
+                    fechasUnicas.forEach(f => {
+                        let info = asistenciaFinalMap[docente] ? asistenciaFinalMap[docente][f] : null;
+                        let marca = "";
+                        let claseEstilo = "libre";
+
+                        if (info) {
+                            marca = info.estado;
+                            if (marca === 'A') claseEstilo = 'asistio';
+                            else if (marca === 'T') claseEstilo = 'tarde';
+                            else if (marca === 'F') claseEstilo = 'falta';
+                        }
+                        
+                        html += `<td class="${claseEstilo}" align="center" title="${info ? 'Primera marca: ' + info.hora : 'Sin programación'}"><b>${marca}</b></td>`;
+                    });
+                    html += `</tr>`;
+                });
+
+                html += `</tbody></table></div><br>`;
+                return html;
+            };
+
+            let nuevaVentana = window.open('', '_blank', 'width=1200,height=800');
+            nuevaVentana.document.write(`
+                <html>
+                <head>
+                    <title>Matriz de Asistencia - A / T / F</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f8fafc; color: #1e293b; }
+                        h2 { text-align: center; color: #2563eb; }
+                        h3 { background: #e2e8f0; padding: 8px 12px; border-radius: 6px; color: #334155; margin-top: 20px; }
+                        table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 20px; font-size: 13px; }
+                        th, td { border: 1px solid #cbd5e1; padding: 8px 10px; }
+                        th { background: #f1f5f9; color: #475569; position: sticky; top: 0; }
+                        .asistio { color: #16a34a; background-color: #f0fdf4; }
+                        .tarde { color: #d97706; background-color: #fef3c7; }
+                        .falta { color: #dc2626; background-color: #fef2f2; }
+                        .libre { background-color: #f8fafc; color: #94a3b8; }
+                        .leyenda { display: flex; gap: 20px; justify-content: center; margin-bottom: 20px; font-weight: 600; font-size: 14px; }
+                        .leyenda span { padding: 6px 14px; border-radius: 4px; }
+                    </style>
+                </head>
+                <body>
+                    <h2>MATRIZ DE ASISTENCIA DOCENTE (Comparación con Horario Oficial)</h2>
+                    <div class="leyenda">
+                        <span class="asistio">A = Asistió a Tiempo (≤ Hora Programada)</span>
+                        <span class="tarde">T = Tarde (> Hora Programada)</span>
+                        <span class="falta">F = Falta (No marcó habiendo programación)</span>
+                    </div>
+                    ${construirTablaMatriz(listaPrimaria, "🏫 NIVEL PRIMARIA")}
+                    ${construirTablaMatriz(listaSecundaria, "🎓 NIVEL SECUNDARIA")}
+                </body>
+                </html>
+            `);
+            nuevaVentana.document.close();
         }
-    }
 
-    // El resto de la función (generarBloquesPorDia y HTML) se mantiene igual...
-    const generarBloquesPorDia = (lista) => {
-        const grupos = lista.sort((a,b) => new Date(a[2]) - new Date(b[2])).reduce((acc, curr) => {
-            (acc[curr[2]] = acc[curr[2]] || []).push(curr);
-            return acc;
-        }, {});
+        function guardarExcel() {
+            if (!currentData) return;
+            const newWs = XLSX.utils.aoa_to_sheet(currentData);
+            newWs['!cols'] = [
+                { wch: 10 }, { wch: 23 }, { wch: 15 }, { wch: 15 }, { wch: 23 }
+            ];
+            const newWb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(newWb, newWs, "Hoja1");
+            XLSX.writeFile(newWb, "archivo_procesado.xlsx");
+        }
 
-        return Object.keys(grupos).map(fecha => `
-            <div class="dia-bloque">
-                <h3>📅 ${fecha}</h3>
-                <table>
-                    ${grupos[fecha].map(f => `
-                        <tr class="${f.estado}">
-                            <td>${f[1]}</td>
-                            <td>${f[3]}</td>
-                        </tr>
+        function imprimirVentana() {
+            window.print();
+        }
+
+        function toggleFiltro8AM() {
+            if (!currentData || currentData.length <= 1) return;
+            const agrupado = currentData.slice(1).reduce((acc, fila) => {
+                let nombre = fila[1];
+                let minutos = convertirHoraAMinutos(fila[3]);
+                let estado = 'TEMPRANO';
+                let clase = 'temprano';
+                if (minutos > 480) {
+                    estado = 'TARDE';
+                    clase = 'tarde';
+                }
+                if (!acc[nombre]) acc[nombre] = [];
+                acc[nombre].push({ fecha: fila[2], hora: fila[3], estado: estado, clase: clase });
+                return acc;
+            }, {});
+
+            let nuevaVentana = window.open('', '_blank', 'width=900,height=800');
+            nuevaVentana.document.write(`
+                <html>
+                <head><style>
+                    body { font-family: sans-serif; padding: 20px; }
+                    .tarjeta-nombre { margin-bottom: 25px; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { padding: 8px; border-bottom: 1px solid #eee; text-align: left; }
+                    .temprano { color: #059669; font-weight: bold; }
+                    .tarde { color: #dc2626; font-weight: bold; }
+                </style></head>
+                <body>
+                    <h2>Registros Agrupados por Nombre</h2>
+                    ${Object.keys(agrupado).sort().map(nombre => `
+                        <div class="tarjeta-nombre">
+                            <h3>👤 ${nombre}</h3>
+                            <table>
+                                <tr><th>Fecha</th><th>Hora</th><th>Estado</th></tr>
+                                ${agrupado[nombre].map(reg => `
+                                    <tr class="${reg.clase}">
+                                        <td>${reg.fecha}</td>
+                                        <td>${reg.hora}</td>
+                                        <td>${reg.estado}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
                     `).join('')}
-                </table>
-            </div>
-        `).join('');
-    };
+                </body>
+                </html>
+            `);
+            nuevaVentana.document.close();
+        }
 
-    let nuevaVentana = window.open('', '_blank', 'width=1100,height=800');
-    nuevaVentana.document.write(`
-        <html>
-        <head>
-            <style>
-                body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
-                .grid { display: flex; gap: 20px; }
-                .col { flex: 1; }
-                .dia-bloque { background: white; margin-bottom: 15px; padding: 10px; border-radius: 8px; border-left: 5px solid #6366f1; }
-                table { width: 100%; border-collapse: collapse; font-size: 12px; }
-                .normal { color: #000000; } 
-                .temprano { color: #059669; font-weight: bold; }
-                .tarde { color: #dc2626; font-weight: bold; background: #fee2e2; }
-            </style>
-        </head>
-        <body>
-            <div class="grid">
-                <div class="col"><h2>🏫 PRIMARIA</h2>${generarBloquesPorDia(primaria)}</div>
-                <div class="col"><h2>🎓 SECUNDARIA</h2>${generarBloquesPorDia(secundaria)}</div>
-            </div>
-        </body>
-        </html>
-    `);
-    nuevaVentana.document.close();
-}
+        function abrirVentanaResumen() {
+            if (!currentData || currentData.length <= 1) return;
+            const resumen = currentData.slice(1).reduce((acc, fila) => {
+                let fecha = fila[2];
+                let minutos = convertirHoraAMinutos(fila[3]);
+                let estado = (minutos > 480) ? 'tarde' : 'temprano';
+                if (!acc[fecha]) acc[fecha] = [];
+                acc[fecha].push({ nombre: fila[1], hora: fila[3], estado: estado });
+                return acc;
+            }, {});
+
+            let nuevaVentana = window.open('', '_blank', 'width=800,height=800');
+            nuevaVentana.document.write(`
+                <html>
+                <head><style>
+                    body { font-family: sans-serif; padding: 20px; background: #f8fafc; }
+                    .bloque-dir { background: white; margin-bottom: 20px; padding: 15px; border-radius: 8px; border-left: 5px solid #4f46e5; }
+                    h3 { margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+                    .fila-persona { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+                    .temprano { color: #059669; font-weight: bold; }
+                    .tarde { color: #dc2626; font-weight: bold; }
+                </style></head>
+                <body>
+                    <h2>Resumen Detallado por Día</h2>
+                    ${Object.keys(resumen).sort().map(fecha => `
+                        <div class="bloque-dir">
+                            <h3>📅 ${fecha}</h3>
+                            ${resumen[fecha].map(p => `
+                                <div class="fila-persona ${p.estado}">
+                                    <span>${p.nombre}</span>
+                                    <span>${p.hora}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </body>
+                </html>
+            `);
+            nuevaVentana.document.close();
+        }
     </script>
 </body>
 </html>
