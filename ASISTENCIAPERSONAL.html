@@ -462,20 +462,27 @@
         function convertirHoraAMinutos(horaStr) {
             if (!horaStr) return 0;
             let lower = String(horaStr).toLowerCase().trim();
-            let partes = lower.replace(/am|pm|a\.m\.|p\.m\./g, '').trim().split(':');
+            
+            // Limpiamos etiquetas de texto para quedarnos solo con los números (horas y minutos)
+            let limpio = lower.replace(/a\.?\s*m\.?|p\.?\s*m\.?/g, '').trim();
+            let partes = limpio.split(':');
             let hours = parseInt(partes[0]) || 0;
             let minutes = parseInt(partes[1]) || 0;
 
-            let esPM = lower.includes('pm') || lower.includes('p.m.');
-            let esAM = lower.includes('am') || lower.includes('a.m.');
+            let esPM = lower.includes('pm') || lower.includes('p.m.') || lower.includes('p. m.');
+            let esAM = lower.includes('am') || lower.includes('a.m.') || lower.includes('a. m.');
 
-            if (hours >= 1 && hours <= 6 && !esAM && !esPM) {
-                if (hours < 7) {
+            // Ajuste para formato de 24 horas o 12 horas con AM/PM
+            if (esPM && hours < 12) {
+                hours += 12;
+            } else if (esAM && hours === 12) {
+                hours = 0;
+            } else if (!esAM && !esPM) {
+                // Si no trae texto AM/PM explícito, manejamos formato 24h estándar
+                if (hours >= 1 && hours <= 6) {
+                    // Si viene como formato especial de tarde/noche sin etiqueta
                     hours += 12;
                 }
-            } else {
-                if (esPM && hours !== 12) hours += 12;
-                if (esAM && hours === 12) hours = 0;
             }
 
             return hours * 60 + minutes;
@@ -533,16 +540,17 @@
                     let marcasDia = registrosPorPersonaFecha[nombre] ? registrosPorPersonaFecha[nombre][fecha] : null;
 
                     if (!marcasDia || marcasDia.length === 0) {
-                        asistenciaFinalMap[nombre][fecha] = { estado: 'F', hora: '-' };
+                        asistenciaFinalMap[nombre][fecha] = { estado: 'F', hora: '-', programada: horaProgramadaStr };
                     } else {
                         marcasDia.sort((m1, m2) => convertirHoraAMinutos(m1) - convertirHoraAMinutos(m2));
                         let primeraMarca = marcasDia[0];
                         let minutosPrimeraMarca = convertirHoraAMinutos(primeraMarca);
 
+                        // Si marca antes o a la misma hora de su programación, es A (Asistió a tiempo). Si marca después, es T (Tarde).
                         if (minutosPrimeraMarca > minutosProgramados) {
-                            asistenciaFinalMap[nombre][fecha] = { estado: 'T', hora: primeraMarca };
+                            asistenciaFinalMap[nombre][fecha] = { estado: 'T', hora: primeraMarca, programada: horaProgramadaStr };
                         } else {
-                            asistenciaFinalMap[nombre][fecha] = { estado: 'A', hora: primeraMarca };
+                            asistenciaFinalMap[nombre][fecha] = { estado: 'A', hora: primeraMarca, programada: horaProgramadaStr };
                         }
                     }
                 });
@@ -586,15 +594,18 @@
                         let info = asistenciaFinalMap[docente] ? asistenciaFinalMap[docente][f] : null;
                         let marca = "";
                         let claseEstilo = "libre";
+                        let tooltipText = "Sin programación";
 
                         if (info) {
                             marca = info.estado;
                             if (marca === 'A') claseEstilo = 'asistio';
                             else if (marca === 'T') claseEstilo = 'tarde';
                             else if (marca === 'F') claseEstilo = 'falta';
+
+                            tooltipText = `Primera marca: ${info.hora} | Hora Programada: ${info.programada} am`;
                         }
                         
-                        html += `<td class="${claseEstilo}" align="center" title="${info ? 'Primera marca: ' + info.hora : 'Sin programación'}"><b>${marca}</b></td>`;
+                        html += `<td class="${claseEstilo}" align="center" title="${tooltipText}"><b>${marca}</b></td>`;
                     });
                     html += `</tr>`;
                 });
