@@ -27,6 +27,12 @@
         .btn-excel:hover { background-color: #ba4a00; }
         .btn-print { background-color: #2980b9; }
         .btn-print:hover { background-color: #2471a3; }
+        .btn-backup { background-color: #16a085; }
+        .btn-backup:hover { background-color: #138d75; }
+        .btn-import { background-color: #c0392b; }
+        .btn-import:hover { background-color: #a93226; }
+        .btn-clear-db { background-color: #34495e; border: 2px dashed #e74c3c; }
+        .btn-clear-db:hover { background-color: #c0392b; }
         
         /* Botón eliminar */
         .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
@@ -102,6 +108,14 @@
         <button class="btn-sort" onclick="ordenarEstudiantes()">A-Z Ordenar</button>
         <button class="btn-save" onclick="guardarDatos()">Guardar Cambios</button>
         <button class="btn-excel" onclick="exportarExcel()">Exportar Excel</button>
+        <button class="btn-backup" onclick="exportarBaseDatosJSON()" title="Exportar respaldo completo del sistema">Exportar Base de Datos</button>
+        
+        <!-- Input file oculto para la importación -->
+        <input type="file" id="inputArchivoRespaldo" accept=".json" style="display: none;" onchange="procesarArchivoImportado(event)">
+        <button class="btn-import" onclick="pedirPasswordImportar()" title="Importar respaldo completo del sistema con contraseña">Importar Base de Datos</button>
+        
+        <button class="btn-clear-db" onclick="pedirPasswordEliminarDatos()" title="Eliminar/Restablecer todos los datos del sistema con contraseña">🗑️ Eliminar Datos</button>
+
         <button onclick="window.open('RUBRICASINFO.html', 'popup', 'width=800,height=600,scrollbars=yes')" 
         style="background-color: #800000; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
             Información
@@ -146,6 +160,9 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyY2Znd3Vib2dvZ3picXdudWZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczMzY1MjgsImV4cCI6MjEwMjkxMjUyOH0.1dGAH9rVLe2-fWpR0tE98hvhzV0Hf6cyepdZiAtguHI'; 
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Contraseña maestra para operaciones administrativas (importar / eliminar datos)
+    const CONTRASENA_ADMIN = "admin2026";
 
     const alumnosPredeterminados = {
         "1": [
@@ -245,7 +262,6 @@
         const pass = prompt("Contraseña para " + gradoDestino + "° grado:");
         if (pass === contrasenasGrado[gradoDestino]) { 
             gradoActual = gradoDestino;
-            // Bloquear columnas al cambiar de grado por seguridad
             columnasHabilitadas = { c1: false, c2: false, c3: false, c4: false, c5: false };
             cargarDatos(); 
         } else { 
@@ -418,6 +434,104 @@
             alert("Error al guardar en la nube: " + error.message);
         } else {
             alert("¡Datos guardados exitosamente en la nube para todos los equipos!"); 
+        }
+    }
+
+    // --- EXPORTAR BASE DE DATOS COMPLETA (JSON) ---
+    function exportarBaseDatosJSON() {
+        const datosCompletos = {
+            alumnos: baseDatos,
+            docente: document.getElementById('docente').value,
+            area: document.getElementById('area').value,
+            bimestre: document.getElementById('selectBimestre').value,
+            fechaRespaldo: new Date().toISOString()
+        };
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosCompletos, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `Respaldo_RegistroDocente_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    // --- IMPORTAR BASE DE DATOS COMPLETA (CON CONTRASEÑA) ---
+   // --- IMPORTAR BASE DE DATOS COMPLETA (CON CONTRASEÑA) ---
+function pedirPasswordImportar() {
+    const passwordIngresada = prompt("Ingrese la contraseña de administrador para importar la Base de Datos:");
+    if (passwordIngresada === CONTRASENA_ADMIN) {
+        const inputFile = document.getElementById('inputArchivoRespaldo');
+        inputFile.value = ""; // Limpiamos para asegurar que el evento onchange se active siempre
+        inputFile.click();
+    } else if (passwordIngresada !== null) {
+        alert("Contraseña incorrecta. No se puede importar el archivo.");
+    }
+}
+
+function procesarArchivoImportado(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+
+    const lector = new FileReader();
+    lector.onload = function(e) {
+        try {
+            const contenidoJson = JSON.parse(e.target.result);
+            if (contenidoJson.alumnos) {
+                if (confirm("¿Estás seguro de sobrescribir los datos actuales con los del archivo de respaldo?")) {
+                    baseDatos = contenidoJson.alumnos;
+                    if (contenidoJson.docente) document.getElementById('docente').value = contenidoJson.docente;
+                    if (contenidoJson.area) document.getElementById('area').value = contenidoJson.area;
+                    if (contenidoJson.bimestre) document.getElementById('selectBimestre').value = contenidoJson.bimestre;
+                    
+                    cargarDatos();
+                    alert("¡Base de datos importada localmente con éxito! No olvides hacer clic en 'Guardar Cambios' si deseas subirla a la nube de Supabase.");
+                }
+            } else {
+                alert("El archivo seleccionado no tiene un formato de respaldo válido.");
+            }
+        } catch (error) {
+            alert("Error al leer el archivo JSON: " + error.message);
+        }
+    };
+    lector.readAsText(archivo);
+}
+
+    // --- ELIMINAR / RESTABLECER DATOS GENERALES (CON CONTRASEÑA) ---
+    async function pedirPasswordEliminarDatos() {
+        const passwordIngresada = prompt("⚠️ ADVERTENCIA: Esta acción eliminará/restablecerá todos los registros del sistema.\n\nIngrese la contraseña de administrador:");
+        if (passwordIngresada === CONTRASENA_ADMIN) {
+            if (confirm("¿Está totalmente seguro? Se restablecerán los listados a los alumnos predeterminados originales y se limpiarán los campos de docente y área.")) {
+                // Restablecer a los alumnos predeterminados originales
+                baseDatos = JSON.parse(JSON.stringify(alumnosPredeterminados));
+                document.getElementById('docente').value = "";
+                document.getElementById('area').value = "";
+                document.getElementById('selectBimestre').value = "I Bimestre";
+                
+                columnasHabilitadas = { c1: false, c2: false, c3: false, c4: false, c5: false };
+                cargarDatos();
+
+                // Actualizar inmediatamente en Supabase
+                const datosGuardar = {
+                    alumnos: baseDatos,
+                    docente: "",
+                    area: "",
+                    bimestre: "I Bimestre"
+                };
+
+                const { error } = await supabaseClient
+                    .from('registros_colegio')
+                    .update({ datos: datosGuardar })
+                    .eq('id', 1);
+
+                if (error) {
+                    alert("Datos restablecidos localmente, pero hubo un error al actualizar la nube: " + error.message);
+                } else {
+                    alert("¡Los datos han sido restablecidos y sincronizados en la nube exitosamente!");
+                }
+            }
+        } else if (passwordIngresada !== null) {
+            alert("Contraseña incorrecta. Operación cancelada.");
         }
     }
 
