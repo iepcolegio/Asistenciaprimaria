@@ -38,7 +38,7 @@
             letter-spacing: 1px;
         }
 
-        /* Botones de la barra lateral */
+        /* Estilos compartidos para botones y enlaces del menú */
         .menu-btn {
             background-color: transparent;
             color: #bdc3c7;
@@ -50,6 +50,8 @@
             cursor: pointer;
             margin-bottom: 10px;
             transition: all 0.3s ease;
+            text-decoration: none; /* Importante para los enlaces */
+            display: block;        /* Importante para que ocupen todo el ancho */
         }
 
         .menu-btn:hover {
@@ -105,15 +107,23 @@
     <!-- Barra Lateral -->
     <nav class="sidebar">
         <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
+        
+        <!-- Botones normales que cargan en el Iframe -->
         <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
         <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
-        <button class="menu-btn" data-url="comportamientoprimaria.html">Comportamiento Primaria</button>
-        <button class="menu-btn" data-url="comportamientosecundaria.html">Comportamiento Secundaria</button>
+        
+        <!-- ENLACES DIRECTOS (Se abren en otra pestaña de forma nativa y sin bloqueos) -->
+        <a href="comportamientoprimaria.html" target="_blank" class="menu-btn">Comportamiento Primaria</a>
+        <a href="comportamientosecundaria.html" target="_blank" class="menu-btn">Comportamiento Secundaria</a>
+        
+        <!-- Botones normales que cargan en el Iframe -->
         <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas</button>
         <button class="menu-btn" data-url="CASOS.html">Registro Tutoria</button>
         <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Admi</button>
-        <button class="menu-btn" id="doc-btn" data-url="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank">Documentos</button>
-        <button class="menu-btn" id="qr-btn" data-url="https://iepcolegio.github.io/ASISTENCIASECUNDARIA/" target="_blank">QR Asistencia Secundaria</button>
+        
+        <!-- Enlaces directos externos que ya tenías -->
+        <a href="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank" class="menu-btn" id="doc-btn">Documentos</a>
+        <a href="https://iepcolegio.github.io/ASISTENCIASECUNDARIA/" target="_blank" class="menu-btn" id="qr-btn">QR Asistencia Secundaria</a>
     </nav>
 
     <!-- Área Derecha -->
@@ -128,20 +138,13 @@
 
     <!-- JavaScript para manejar la interactividad -->
     <script>
-        const buttons = document.querySelectorAll('.menu-btn');
+        const buttons = document.querySelectorAll('.menu-btn[data-url]');
         const viewer = document.getElementById('viewer');
         const welcome = document.getElementById('welcome');
 
         buttons.forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (e) => {
                 const url = button.getAttribute('data-url');
-                const target = button.getAttribute('target');
-
-                // Si el botón tiene target="_blank", abre en una nueva pestaña y no altera el iframe
-                if (target === '_blank') {
-                    window.open(url, '_blank');
-                    return;
-                }
 
                 // Remover la clase 'active' de todos los botones y ponérsela al presionado
                 buttons.forEach(btn => btn.classList.remove('active'));
