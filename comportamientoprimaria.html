@@ -312,7 +312,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             ]
         };
 
-        let baseDatos = JSON.parse(localStorage.getItem('bd_colegio')) || alumnosPredeterminados;
+       let baseDatos = JSON.parse(localStorage.getItem('bd_colegio')) || alumnosPredeterminados;
         
         const listaGrados = ["1", "2", "3A", "3B", "4", "5A", "5B", "6A", "6B"];
         listaGrados.forEach(g => { if (!baseDatos[g]) baseDatos[g] = []; });
@@ -368,160 +368,167 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             </select>`;
         }
 
-       async function cargarDatos() {
-    const tbody = document.getElementById('cuerpoTabla');
-    tbody.innerHTML = '<tr><td colspan="9">Cargando datos desde la nube...</td></tr>';
+        async function cargarDatos() {
+            const tbody = document.getElementById('cuerpoTabla');
+            tbody.innerHTML = '<tr><td colspan="9">Cargando datos desde la nube...</td></tr>';
 
-    const { data, error } = await supabaseClient
-        .from('registros_docente')
-        .select('*')
-        .eq('grado', gradoActual)
-        .order('nombre_estudiante', { ascending: true });
+            const { data, error } = await supabaseClient
+                .from('registros_docente')
+                .select('*')
+                .eq('grado', gradoActual)
+                .order('nombre_estudiante', { ascending: true });
 
-    if (error) {
-        console.error('Error al cargar:', error);
-        alert('Hubo un error al cargar los datos de la nube.');
-        return;
-    }
+            if (error) {
+                console.error('Error al cargar:', error);
+                alert('Hubo un error al cargar los datos de la nube.');
+                return;
+            }
 
-    baseDatos[gradoActual] = data.map(item => ({
-        id: item.id, // ID único de Supabase
-        nombre: item.nombre_estudiante,
-        c1: item.c1 || 'A',
-        c2: item.c2 || 'A',
-        c3: item.c3 || 'A',
-        c4: item.c4 || 'A',
-        c5: item.c5 || 'A',
-        logro: item.logro || 'A'
-    }));
+            baseDatos[gradoActual] = data.map(item => ({
+                id: item.id, // ID único de Supabase
+                nombre: item.nombre_estudiante,
+                c1: item.c1 || 'A',
+                c2: item.c2 || 'A',
+                c3: item.c3 || 'A',
+                c4: item.c4 || 'A',
+                c5: item.c5 || 'A',
+                logro: item.logro || 'A'
+            }));
 
-    renderizarTablaLocal();
-}
-// Función auxiliar para pintar la tabla en pantalla con los datos actuales
-function renderizarTablaLocal() {
-    const tbody = document.getElementById('cuerpoTabla');
-    tbody.innerHTML = '';
+            renderizarTablaLocal();
+        }
 
-    baseDatos[gradoActual].forEach((alumno, index) => {
-        alumno.logro = calcularLogro(alumno);
-        tbody.innerHTML += `<tr>
-            <td>${index + 1}</td>
-            <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
-            <td>${crearSelect(alumno.c1, index, 'c1')}</td>
-            <td>${crearSelect(alumno.c2, index, 'c2')}</td>
-            <td>${crearSelect(alumno.c3, index, 'c3')}</td>
-            <td>${crearSelect(alumno.c4, index, 'c4')}</td>
-            <td>${crearSelect(alumno.c5, index, 'c5')}</td>
-            <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
-            <td class="no-print">
-                <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
-            </td>
-        </tr>`;
-    });
-}
+        // Función auxiliar para pintar la tabla en pantalla con los datos actuales
+        function renderizarTablaLocal() {
+            const tbody = document.getElementById('cuerpoTabla');
+            tbody.innerHTML = '';
 
-// Modificar guardarDatos (o actualizar directamente al cambiar notas)
-async function guardarDatos() {
-    // Si deseas sincronizar todo el grado actual de golpe:
-    alert("Sincronizando cambios con Supabase...");
-    // O puedes programar que cada cambio de nota o añadir alumno se guarde automáticamente en la BD.
-}
+            baseDatos[gradoActual].forEach((alumno, index) => {
+                alumno.logro = calcularLogro(alumno);
+                tbody.innerHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
+                    <td>${crearSelect(alumno.c1, index, 'c1')}</td>
+                    <td>${crearSelect(alumno.c2, index, 'c2')}</td>
+                    <td>${crearSelect(alumno.c3, index, 'c3')}</td>
+                    <td>${crearSelect(alumno.c4, index, 'c4')}</td>
+                    <td>${crearSelect(alumno.c5, index, 'c5')}</td>
+                    <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
+                    <td class="no-print">
+                        <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
+                    </td>
+                </tr>`;
+            });
+        }
 
-       async function actualizarNota(el, index, campo) {
-    const valorNuevo = el.value;
-    baseDatos[gradoActual][index][campo] = valorNuevo;
-    el.className = `color-${valorNuevo}`;
-    
-    const alumno = baseDatos[gradoActual][index];
-    const nuevoLogro = calcularLogro(alumno);
-    alumno.logro = nuevoLogro;
-    
-    const tdLogro = document.getElementById(`logro-${index}`);
-    if (tdLogro) {
-        tdLogro.className = `color-${nuevoLogro}`;
-        tdLogro.innerHTML = `<b>${nuevoLogro}</b>`;
-    }
+        async function actualizarNota(el, index, campo) {
+            const valorNuevo = el.value;
+            baseDatos[gradoActual][index][campo] = valorNuevo;
+            el.className = `color-${valorNuevo}`;
+            
+            const alumno = baseDatos[gradoActual][index];
+            const nuevoLogro = calcularLogro(alumno);
+            alumno.logro = nuevoLogro;
+            
+            const tdLogro = document.getElementById(`logro-${index}`);
+            if (tdLogro) {
+                tdLogro.className = `color-${nuevoLogro}`;
+                tdLogro.innerHTML = `<b>${nuevoLogro}</b>`;
+            }
 
-    // Si el alumno existe en Supabase, actualizamos su registro y su logro de inmediato
-    if (alumno.id) {
-        const { error } = await supabaseClient
-            .from('registros_docente')
-            .update({ [campo]: valorNuevo, logro: nuevoLogro })
-            .eq('id', alumno.id);
+            if (alumno.id) {
+                const { error } = await supabaseClient
+                    .from('registros_docente')
+                    .update({ [campo]: valorNuevo, logro: nuevoLogro })
+                    .eq('id', alumno.id);
 
-        if (error) console.error("Error al actualizar nota en Supabase:", error);
-    }
-}
+                if (error) console.error("Error al actualizar nota en Supabase:", error);
+            }
+        }
 
-        function editarNombre(index) {
-            const nombreActual = baseDatos[gradoActual][index].nombre;
-            const nuevoNombre = prompt("Editar Apellidos y Nombres:", nombreActual);
+        async function editarNombre(index) {
+            const alumno = baseDatos[gradoActual][index];
+            const nuevoNombre = prompt("Editar Apellidos y Nombres:", alumno.nombre);
             
             if (nuevoNombre !== null && nuevoNombre.trim() !== "") {
-                baseDatos[gradoActual][index].nombre = nuevoNombre.trim();
-                document.getElementById(`nombre-${index}`).innerText = nuevoNombre.trim();
+                const nombreLimpio = nuevoNombre.trim();
+                alumno.nombre = nombreLimpio;
+                document.getElementById(`nombre-${index}`).innerText = nombreLimpio;
+
+                if (alumno.id) {
+                    const { error } = await supabaseClient
+                        .from('registros_docente')
+                        .update({ nombre_estudiante: nombreLimpio })
+                        .eq('id', alumno.id);
+
+                    if (error) {
+                        console.error("Error al actualizar el nombre en Supabase:", error);
+                        alert("No se pudo actualizar el nombre en la nube.");
+                    }
+                }
             }
         }
 
         async function agregarEstudiante() {
-    const nombreInput = document.getElementById('nombre');
-    const nombre = nombreInput.value.trim();
-    
-    if(!nombre) {
-        alert("Por favor, ingrese el nombre del estudiante.");
-        return;
-    }
-
-    const nuevoAlumno = {
-        grado: gradoActual,
-        nombre_estudiante: nombre,
-        c1: 'A', c2: 'A', c3: 'A', c4: 'A', c5: 'A',
-        logro: 'A'
-    };
-
-    const { data, error } = await supabaseClient
-        .from('registros_docente')
-        .insert([nuevoAlumno])
-        .select();
-
-    if (error) {
-        console.error('Error al agregar:', error);
-        alert('No se pudo guardar el estudiante en la nube.');
-        return;
-    }
-
-    nombreInput.value = '';
-    cargarDatos(); // Recarga desde la nube para reflejar el ID real generado
-}
-
-       async function eliminar(index) {
-    const alumno = baseDatos[gradoActual][index];
-    if (confirm(`¿Está seguro de eliminar a ${alumno.nombre}?`)) {
-        if (alumno.id) {
-            const { error } = await supabaseClient
-                .from('registros_docente')
-                .delete()
-                .eq('id', alumno.id);
-
-            if (error) {
-                console.error('Error al eliminar:', error);
-                alert('No se pudo eliminar el registro de la nube.');
+            const nombreInput = document.getElementById('nombre');
+            const nombre = nombreInput.value.trim();
+            
+            if(!nombre) {
+                alert("Por favor, ingrese el nombre del estudiante.");
                 return;
             }
+
+            const nuevoAlumno = {
+                grado: gradoActual,
+                nombre_estudiante: nombre,
+                c1: 'A', c2: 'A', c3: 'A', c4: 'A', c5: 'A',
+                logro: 'A'
+            };
+
+            const { data, error } = await supabaseClient
+                .from('registros_docente')
+                .insert([nuevoAlumno])
+                .select();
+
+            if (error) {
+                console.error('Error al agregar:', error);
+                alert('No se pudo guardar el estudiante en la nube.');
+                return;
+            }
+
+            nombreInput.value = '';
+            cargarDatos(); 
         }
-        cargarDatos();
-    }
-}
+
+        async function eliminar(index) {
+            const alumno = baseDatos[gradoActual][index];
+            if (confirm(`¿Está seguro de eliminar a ${alumno.nombre}?`)) {
+                if (alumno.id) {
+                    const { error } = await supabaseClient
+                        .from('registros_docente')
+                        .delete()
+                        .eq('id', alumno.id);
+
+                    if (error) {
+                        console.error('Error al eliminar:', error);
+                        alert('No se pudo eliminar el registro de la nube.');
+                        return;
+                    }
+                }
+                cargarDatos();
+            }
+        }
+
         function ordenarEstudiantes() {
             if (baseDatos[gradoActual] && baseDatos[gradoActual].length > 0) {
                 baseDatos[gradoActual].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', {sensitivity: 'base'}));
-                cargarDatos();
+                renderizarTablaLocal();
             }
         }
 
         function guardarDatos() { 
             localStorage.setItem('bd_colegio', JSON.stringify(baseDatos)); 
-            alert("Datos guardados exitosamente en el navegador de este equipo."); 
+            alert("Sincronización local exitosa (Los datos en la nube ya se guardan automáticamente al modificar notas o agregar alumnos)."); 
         }
 
         function exportarDatos() {
@@ -559,7 +566,7 @@ async function guardarDatos() {
                         }
                         localStorage.setItem('bd_colegio', JSON.stringify(baseDatos));
                         cargarDatos();
-                        alert("¡Datos importados y guardados con éxito!");
+                        alert("¡Datos importados con éxito!");
                     } else {
                         alert("El archivo no tiene un formato válido.");
                     }
@@ -571,14 +578,27 @@ async function guardarDatos() {
             lector.readAsText(archivo);
         }
 
-        function validarPasswordEliminarTodo() {
+        async function validarPasswordEliminarTodo() {
             let textoGrado = gradoActual.includes("A") || gradoActual.includes("B") 
                 ? `${gradoActual.slice(0,-1)}° grado ${gradoActual.slice(-1)}` 
                 : `${gradoActual}° grado`;
 
             const pass = prompt("Ingrese la contraseña de administración para VACIAR los datos del " + textoGrado + ":");
             if (pass === "admin2026") {
-                if (confirm(`¿Está completamente seguro de eliminar todos los alumnos registrados en el ${textoGrado}? Esta acción no se puede deshacer.`)) {
+                if (confirm(`¿Está completamente seguro de eliminar todos los alumnos registrados en el ${textoGrado} (incluyendo la nube)? Esta acción no se puede deshacer.`)) {
+                    
+                    // Borrar de Supabase para este grado
+                    const { error } = await supabaseClient
+                        .from('registros_docente')
+                        .delete()
+                        .eq('grado', gradoActual);
+
+                    if (error) {
+                        console.error("Error al vaciar grado en Supabase:", error);
+                        alert("Hubo un problema al vaciar los datos en la nube.");
+                        return;
+                    }
+
                     baseDatos[gradoActual] = [];
                     localStorage.setItem('bd_colegio', JSON.stringify(baseDatos));
                     cargarDatos();
