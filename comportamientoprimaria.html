@@ -123,6 +123,10 @@
     </table>
 
     <script>
+        const SUPABASE_URL = 'https://dtpbgitkweaesclgphmm.supabase.co/rest/v1/';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0cGJnaXRrd2VhZXNjbGdwaG1tIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODk2MTg2OSwiZXhwIjoyMTA0NTM3ODY5fQ.Y1EgsV-0aJEbGp276joTtwu7ResrMKUoaR5QsHaqlgM';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
         const alumnosPredeterminados = {
             "1": [
                 { nombre: "ABURTO ABURTO IKER VALENTIN", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" },
@@ -364,27 +368,66 @@
             </select>`;
         }
 
-        function cargarDatos() {
-            const tbody = document.getElementById('cuerpoTabla');
-            tbody.innerHTML = '';
+        async function cargarDatos() {
+    const tbody = document.getElementById('cuerpoTabla');
+    tbody.innerHTML = '<tr><td colspan="9">Cargando datos desde la nube...</td></tr>';
 
-            baseDatos[gradoActual].forEach((alumno, index) => {
-                alumno.logro = calcularLogro(alumno);
-                tbody.innerHTML += `<tr>
-                    <td>${index + 1}</td>
-                    <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
-                    <td>${crearSelect(alumno.c1, index, 'c1')}</td>
-                    <td>${crearSelect(alumno.c2, index, 'c2')}</td>
-                    <td>${crearSelect(alumno.c3, index, 'c3')}</td>
-                    <td>${crearSelect(alumno.c4, index, 'c4')}</td>
-                    <td>${crearSelect(alumno.c5, index, 'c5')}</td>
-                    <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
-                    <td class="no-print">
-                        <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
-                    </td>
-                </tr>`;
-            });
-        }
+    const { data, error } = await supabaseClient
+        .from('registros_docente')
+        .select('*')
+        .eq('grado', gradoActual)
+        .order('nombre_estudiante', { ascending: true });
+
+    if (error) {
+        console.error('Error al cargar:', error);
+        alert('Hubo un error al cargar los datos de la nube.');
+        return;
+    }
+
+    // Sincronizamos con nuestra estructura local en memoria
+    baseDatos[gradoActual] = data.map(item => ({
+        id: item.id, // Guardamos el ID de la base de datos para futuras referencias
+        nombre: item.nombre_estudiante,
+        c1: item.c1,
+        c2: item.c2,
+        c3: item.c3,
+        c4: item.c4,
+        c5: item.c5,
+        logro: item.logro
+    }));
+
+    renderizarTablaLocal();
+}
+
+// Función auxiliar para pintar la tabla en pantalla con los datos actuales
+function renderizarTablaLocal() {
+    const tbody = document.getElementById('cuerpoTabla');
+    tbody.innerHTML = '';
+
+    baseDatos[gradoActual].forEach((alumno, index) => {
+        alumno.logro = calcularLogro(alumno);
+        tbody.innerHTML += `<tr>
+            <td>${index + 1}</td>
+            <td id="nombre-${index}" style="text-align:left; font-weight: 500; cursor: pointer;" title="Doble clic para editar nombre" ondblclick="editarNombre(${index})">${alumno.nombre}</td>
+            <td>${crearSelect(alumno.c1, index, 'c1')}</td>
+            <td>${crearSelect(alumno.c2, index, 'c2')}</td>
+            <td>${crearSelect(alumno.c3, index, 'c3')}</td>
+            <td>${crearSelect(alumno.c4, index, 'c4')}</td>
+            <td>${crearSelect(alumno.c5, index, 'c5')}</td>
+            <td id="logro-${index}" class="color-${alumno.logro}"><b>${alumno.logro}</b></td>
+            <td class="no-print">
+                <button class="btn-delete" onclick="eliminar(${index})">Eliminar</button>
+            </td>
+        </tr>`;
+    });
+}
+
+// Modificar guardarDatos (o actualizar directamente al cambiar notas)
+async function guardarDatos() {
+    // Si deseas sincronizar todo el grado actual de golpe:
+    alert("Sincronizando cambios con Supabase...");
+    // O puedes programar que cada cambio de nota o añadir alumno se guarde automáticamente en la BD.
+}
 
         function actualizarNota(el, index, campo) {
             baseDatos[gradoActual][index][campo] = el.value;
