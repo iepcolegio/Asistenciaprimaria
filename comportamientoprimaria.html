@@ -20,12 +20,18 @@
         .btn-sort:hover { background-color: #8e44ad; }
         .btn-save { background-color: #27ae60; }
         .btn-save:hover { background-color: #219653; }
-        .btn-info { background-color: #16a085; }
-        .btn-info:hover { background-color: #117a65; }
         .btn-print { background-color: #2980b9; }
         .btn-print:hover { background-color: #2471a3; }
         
-        /* Botón eliminar */
+        /* Botones especiales */
+        .btn-export { background-color: #d35400; }
+        .btn-export:hover { background-color: #ba4a00; }
+        .btn-import { background-color: #7f8c8d; }
+        .btn-import:hover { background-color: #707b7c; }
+        .btn-wipe { background-color: #c0392b; }
+        .btn-wipe:hover { background-color: #a93226; }
+        
+        /* Botón eliminar fila */
         .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; }
         .btn-delete:hover { background-color: #c0392b; }
         
@@ -34,27 +40,17 @@
         .color-A { background-color: #27ae60; color: white; }
         .color-B { background-color: #f1c40f; color: black; }
         .color-C { background-color: #e74c3c; color: white; }
-        
-        /* ESTILOS DEL MODAL (VENTANA EMERGENTE) */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); overflow-y: auto; }
-        .modal-content { background-color: #fff; margin: 40px auto; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); position: relative; }
-        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
-        .close-modal:hover { color: #333; }
-        .modal-img { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
        @media print {
-    .no-print { display: none !important; }
-    body { background: white; padding: 0; }
-    
-    /* Hacemos visible el encabezado de impresión */
-    #printHeader { display: block !important; }
-    
-    table { width: 100%; border: 1px solid #000; }
-}
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            #printHeader { display: block !important; }
+            table { width: 100%; border: 1px solid #000; }
+        }
         h6 { 
             text-align: center;
             color: #008080;
-            font-size:30px;
+            font-size: 30px;
             font-family: 'Roboto', sans-serif;
             font-weight: bold;
             margin: 8px;
@@ -66,17 +62,18 @@
         <img src="rosario.jpg" alt="Logo Colegio" width="920px">
     </p>
     <h6>NIVEL PRIMARIO</h6>
+    
     <div class="controls no-print" style="margin-top: 10px;">
-    <input type="text" id="nombreDocente" placeholder="Nombre del Docente" style="padding:10px; width:200px;">
-    <input type="text" id="mesRegistro" placeholder="Mes" style="padding:10px; width:120px;">
-    <input type="text" id="bimestreRegistro" placeholder="Bimestre" style="padding:10px; width:120px;">
-</div>
+        <input type="text" id="nombreDocente" placeholder="Nombre del Docente" style="padding:10px; width:200px;">
+        <input type="text" id="mesRegistro" placeholder="Mes" style="padding:10px; width:120px;">
+        <input type="text" id="bimestreRegistro" placeholder="Bimestre" style="padding:10px; width:120px;">
+    </div>
 
-<!-- Agregamos este contenedor para que aparezca al imprimir -->
-<div id="printHeader" style="display:none; text-align: left; margin-bottom: 20px;">
-    <p><strong>Docente:</strong> <span id="vDocente"></span></p>
-    <p><strong>Mes:</strong> <span id="vMes"></span> &nbsp;&nbsp; <strong>Bimestre:</strong> <span id="vBimestre"></span></p>
-</div>
+    <div id="printHeader" style="display:none; text-align: left; margin-bottom: 20px;">
+        <p><strong>Docente:</strong> <span id="vDocente"></span></p>
+        <p><strong>Mes:</strong> <span id="vMes"></span> &nbsp;&nbsp; <strong>Bimestre:</strong> <span id="vBimestre"></span></p>
+    </div>
+
     <div class="controls no-print">
         <select id="selectGrado" onchange="cambiarGrado(this)" style="padding:10px; width:180px; border: 1px solid #ccc;">
             <option value="1">1° Grado</option>
@@ -94,6 +91,12 @@
         <button class="btn-add" onclick="agregarEstudiante()">Añadir Alumno</button>
         <button class="btn-sort" onclick="ordenarEstudiantes()">A-Z Ordenar</button>
         <button class="btn-save" onclick="guardarDatos()">Guardar Cambios</button>
+        <button class="btn-export" onclick="exportarDatos()">Exportar Respaldo</button>
+        <button class="btn-import" onclick="validarPasswordImportar()">Importar Datos</button>
+        <button class="btn-wipe" onclick="validarPasswordEliminarTodo()">Eliminar Datos (Grado)</button>
+        
+        <input type="file" id="inputArchivo" style="display: none;" accept=".json" onchange="procesarArchivoImportado(event)">
+
         <button onclick="window.open('comportamientoC.jpg', 'popup', 'width=600,height=400')" 
                 style="background-color: #800000; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
             Información
@@ -118,19 +121,7 @@
         <tbody id="cuerpoTabla"></tbody>
     </table>
 
-    <div id="modalCriterios" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="cerrarModal()">&times;</span>
-        </div>
-    </div>
-
     <script>
-        // =========================================================================
-        //  REMPLAZA ESTOS EJEMPLOS CON LOS NOMBRES REALES DE TUS ESTUDIANTES
-        // =========================================================================
-        // =========================================================================
-        // LISTA COMPLETA DE ESTUDIANTES POR GRADO
-        // =========================================================================
         const alumnosPredeterminados = {
             "1": [
                 { nombre: "ABURTO ABURTO IKER VALENTIN", c1: "A", c2: "A", c3: "A", c4: "A", c5: "A" },
@@ -316,14 +307,11 @@
             ]
         };
 
-        // Carga la base de datos local o, en su defecto, la lista predeterminada adaptada
         let baseDatos = JSON.parse(localStorage.getItem('bd_colegio')) || alumnosPredeterminados;
         
-        // Validar que existan todos los identificadores de los nuevos grados en el objeto de datos
         const listaGrados = ["1", "2", "3A", "3B", "4", "5A", "5B", "6A", "6B"];
         listaGrados.forEach(g => { if (!baseDatos[g]) baseDatos[g] = []; });
 
-        // Contraseñas actualizadas de acuerdo con los nuevos nombres de los grados
         const contrasenas = { 
             "1": "primero", 
             "2": "segundo", 
@@ -340,7 +328,6 @@
         let gradoActual = "1"; 
 
         function verificarAcceso(gradoDestino) {
-            // Convierte visualmente el texto de la alerta dependiendo de si tiene letra de sección o no
             let textoGrado = gradoDestino.includes("A") || gradoDestino.includes("B") 
                 ? `${gradoDestino.slice(0,-1)}° grado ${gradoDestino.slice(-1)}` 
                 : `${gradoDestino}° grado`;
@@ -455,27 +442,81 @@
             alert("Datos guardados exitosamente en el navegador de este equipo."); 
         }
 
-        function cerrarModal() {
-            document.getElementById('modalCriterios').style.display = "none";
+        function exportarDatos() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(baseDatos, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "registro_colegio_respaldo.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
         }
 
-        window.onclick = function(event) {
-            const modal = document.getElementById('modalCriterios');
-            if (event.target == modal) {
-                modal.style.display = "none";
+        function validarPasswordImportar() {
+            const pass = prompt("Ingrese la contraseña de administración para importar datos:");
+            if (pass === "admin2026") {
+                document.getElementById('inputArchivo').click();
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta. No se puede importar.");
             }
         }
-        
+
+        function procesarArchivoImportado(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                try {
+                    const datosImportados = JSON.parse(e.target.result);
+                    if (datosImportados && typeof datosImportados === 'object') {
+                        if (datosImportados[gradoActual]) {
+                            baseDatos[gradoActual] = datosImportados[gradoActual];
+                        } else {
+                            baseDatos = datosImportados;
+                        }
+                        localStorage.setItem('bd_colegio', JSON.stringify(baseDatos));
+                        cargarDatos();
+                        alert("¡Datos importados y guardados con éxito!");
+                    } else {
+                        alert("El archivo no tiene un formato válido.");
+                    }
+                } catch (error) {
+                    alert("Error al leer el archivo JSON.");
+                }
+                event.target.value = ''; 
+            };
+            lector.readAsText(archivo);
+        }
+
+        function validarPasswordEliminarTodo() {
+            let textoGrado = gradoActual.includes("A") || gradoActual.includes("B") 
+                ? `${gradoActual.slice(0,-1)}° grado ${gradoActual.slice(-1)}` 
+                : `${gradoActual}° grado`;
+
+            const pass = prompt("Ingrese la contraseña de administración para VACIAR los datos del " + textoGrado + ":");
+            if (pass === "admin2026") {
+                if (confirm(`¿Está completamente seguro de eliminar todos los alumnos registrados en el ${textoGrado}? Esta acción no se puede deshacer.`)) {
+                    baseDatos[gradoActual] = [];
+                    localStorage.setItem('bd_colegio', JSON.stringify(baseDatos));
+                    cargarDatos();
+                    alert("Se han eliminado los datos del grado actual.");
+                }
+            } else if (pass !== null) {
+                alert("Contraseña incorrecta. Acción cancelada.");
+            }
+        }
+
+        function prepararImpresion() {
+            document.getElementById('vDocente').innerText = document.getElementById('nombreDocente').value;
+            document.getElementById('vMes').innerText = document.getElementById('mesRegistro').value;
+            document.getElementById('vBimestre').innerText = document.getElementById('bimestreRegistro').value;
+            window.print();
+        }
+
         window.onload = function() {
             verificarAcceso("1");
         }
-        
-        function prepararImpresion() {
-    document.getElementById('vDocente').innerText = document.getElementById('nombreDocente').value;
-    document.getElementById('vMes').innerText = document.getElementById('mesRegistro').value;
-    document.getElementById('vBimestre').innerText = document.getElementById('bimestreRegistro').value;
-    window.print();
-}
     </script>
 </body>
 </html>
