@@ -164,41 +164,13 @@
             margin-top: 2px;
         }
 
-        /* Contenedor para múltiples áreas de un mismo docente en una celda */
-        .subareas-container {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .subarea-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .subarea-label {
-            font-size: 10px;
-            font-weight: bold;
-            color: #334155;
-            background: #e2e8f0;
-            padding: 2px 5px;
-            border-radius: 4px;
-            min-width: 75px;
-            text-align: center;
-        }
-
         .check-btn {
-            font-size: 18px;
+            font-size: 20px;
             background: none;
             border: 2px solid #cbd5e1;
             border-radius: 6px;
-            width: 32px;
-            height: 32px;
+            width: 35px;
+            height: 35px;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
@@ -286,24 +258,25 @@
     <div class="container">
         <header>
             <h1>Control Semanal de Sesiones Docentes</h1>
-            <p>Matriz de registro por mes, grado, semanas y docentes</p>
+            <p>Matriz de registro por bimestre, mes, grado, semanas y docentes</p>
         </header>
 
-        <!-- Controles: Mes y Grado -->
+        <!-- Controles: Bimestre, Mes y Grado -->
         <div class="controls-container">
+            <div class="control-group">
+                <label for="select-bimestre">Seleccionar Bimestre:</label>
+                <select id="select-bimestre" onchange="cambiarBimestre(this.value)">
+                    <option value="I Bimestre">I Bimestre</option>
+                    <option value="II Bimestre">II Bimestre</option>
+                    <option value="III Bimestre" selected>III Bimestre</option>
+                    <option value="IV Bimestre">IV Bimestre</option>
+                </select>
+            </div>
+
             <div class="control-group">
                 <label for="select-mes">Seleccionar Mes:</label>
                 <select id="select-mes" onchange="cambiarMes(this.value)">
-                    <option value="Marzo">Marzo</option>
-                    <option value="Abril">Abril</option>
-                    <option value="Mayo">Mayo</option>
-                    <option value="Junio">Junio</option>
-                    <option value="Julio">Julio</option>
-                    <option value="Agosto">Agosto</option>
-                    <option value="Septiembre" selected>Septiembre</option>
-                    <option value="Octubre">Octubre</option>
-                    <option value="Noviembre">Noviembre</option>
-                    <option value="Diciembre">Diciembre</option>
+                    <!-- Se llena dinámicamente según el bimestre -->
                 </select>
             </div>
 
@@ -338,7 +311,7 @@
 
         <!-- Resumen Dinámico -->
         <div class="summary-box">
-            <h3>Resumen de Entregas - <span id="txt-mes-actual">Septiembre</span> (<span id="txt-grado-actual">3°</span>)</h3>
+            <h3>Resumen de Entregas - <span id="txt-bimestre-actual">III Bimestre</span> / <span id="txt-mes-actual">Septiembre</span> (<span id="txt-grado-actual">3°</span>)</h3>
             <div id="contenedor-resumen-semanas">
                 <!-- Se llena dinámicamente -->
             </div>
@@ -366,10 +339,17 @@
             { nombre: "BENITO QUISPE ARIAS", area: "RELIGION" },
             { nombre: "KATHIA ESPINOZA FALCON", area: "INGLES" },
             { nombre: "HILDA HUAPAYA MANCO", area: "EDUCACIÓN PARA EL TRABAJO" },
-            { nombre: "ROSIO SOLIS MALLMA", area: ["COMUNICACION", "INGLES", "DPCC"], multiArea: true },
+            { nombre: "ROSIO SOLIS MALLMA", area: "DPCC" },
             { nombre: "DORIS DONAYRE SOLIS", area: "COMUNICACION" },
             { nombre: "JUDITH PACHECO GARCIA", area: "FISICA" }
         ];
+
+        const bimestresMeses = {
+            "I Bimestre": ["Marzo", "Abril"],
+            "II Bimestre": ["Mayo", "Junio", "Julio"],
+            "III Bimestre": ["Agosto", "Septiembre", "Octubre"],
+            "IV Bimestre": ["Noviembre", "Diciembre"]
+        };
 
         const mesesSemanas = {
             "Marzo": ["Semana 1 (Del 02 al 06 de Marzo)", "Semana 2 (Del 09 al 13 de Marzo)", "Semana 3 (Del 16 al 20 de Marzo)", "Semana 4 (Del 23 al 27 de Marzo)"],
@@ -384,10 +364,37 @@
             "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)"]
         };
 
-        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV8')) || {};
+        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV10')) || {};
 
+        let bimestreActual = "III Bimestre";
         let mesActual = "Septiembre";
         let gradoActual = "3°";
+
+        function actualizarSelectMeses() {
+            const selectMes = document.getElementById('select-mes');
+            selectMes.innerHTML = '';
+            let mesesPermitidos = bimestresMeses[bimestreActual];
+            
+            mesesPermitidos.forEach(mes => {
+                let option = document.createElement('option');
+                option.value = mes;
+                option.textContent = mes;
+                selectMes.appendChild(option);
+            });
+
+            if (!mesesPermitidos.includes(mesActual)) {
+                mesActual = mesesPermitidos[0];
+            }
+            selectMes.value = mesActual;
+        }
+
+        function cambiarBimestre(bimestre) {
+            bimestreActual = bimestre;
+            actualizarSelectMeses();
+            asegurarDatosMesGrado();
+            actualizarTitulo();
+            renderizarMatriz();
+        }
 
         function obtenerListaDocentesActual() {
             return gradoActual === "3°" ? docentes3 : docentes4;
@@ -404,14 +411,7 @@
                 semanas.forEach(semana => {
                     estructura[semana] = {};
                     listaActual.forEach(doc => {
-                        if (doc.multiArea) {
-                            estructura[semana][doc.nombre] = {};
-                            doc.area.forEach(subArea => {
-                                estructura[semana][doc.nombre][subArea] = { entregado: false, fecha: null };
-                            });
-                        } else {
-                            estructura[semana][doc.nombre] = { entregado: false, fecha: null };
-                        }
+                        estructura[semana][doc.nombre] = { entregado: false, fecha: null };
                     });
                 });
                 datosMatriz[mesActual][gradoActual] = estructura;
@@ -440,58 +440,32 @@
         }
 
         function actualizarTitulo() {
-            document.getElementById('titulo-matriz').textContent = `Matriz de Control - ${gradoActual} Grado (${mesActual})`;
+            document.getElementById('titulo-matriz').textContent = `Matriz de Control - ${gradoActual} Grado (${mesActual} / ${bimestreActual})`;
+            document.getElementById('txt-bimestre-actual').textContent = bimestreActual;
             document.getElementById('txt-mes-actual').textContent = mesActual;
             document.getElementById('txt-grado-actual').textContent = gradoActual;
         }
 
-        function cambiarEstado(semana, nombreDocente, subArea = null) {
-            let docRef = datosMatriz[mesActual][gradoActual][semana][nombreDocente];
+        function cambiarEstado(semana, nombreDocente) {
+            let actualObj = datosMatriz[mesActual][gradoActual][semana][nombreDocente];
+            if (typeof actualObj === 'boolean') {
+                actualObj = { entregado: actualObj, fecha: null };
+            }
 
-            if (subArea !== null) {
-                if (!docRef[subArea]) {
-                    docRef[subArea] = { entregado: false, fecha: null };
-                }
-                let actualObj = docRef[subArea];
-                if (typeof actualObj === 'boolean') {
-                    actualObj = { entregado: actualObj, fecha: null };
-                }
-
-                if (!actualObj.entregado) {
-                    let ahora = new Date();
-                    let fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    let horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    
-                    docRef[subArea] = {
-                        entregado: true,
-                        fecha: `${fechaFormateada} a las ${horaFormateada}`
-                    };
-                } else {
-                    docRef[subArea] = {
-                        entregado: false,
-                        fecha: null
-                    };
-                }
+            if (!actualObj.entregado) {
+                let ahora = new Date();
+                let fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                let horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
+                    entregado: true,
+                    fecha: `${fechaFormateada} a las ${horaFormateada}`
+                };
             } else {
-                if (typeof docRef === 'boolean') {
-                    docRef = { entregado: docRef, fecha: null };
-                }
-
-                if (!docRef.entregado) {
-                    let ahora = new Date();
-                    let fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                    let horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    
-                    datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
-                        entregado: true,
-                        fecha: `${fechaFormateada} a las ${horaFormateada}`
-                    };
-                } else {
-                    datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
-                        entregado: false,
-                        fecha: null
-                    };
-                }
+                datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
+                    entregado: false,
+                    fecha: null
+                };
             }
             renderizarMatriz();
         }
@@ -515,12 +489,7 @@
 
             listaActual.forEach(doc => {
                 let th = document.createElement('th');
-                if (doc.multiArea) {
-                    let textoAreas = doc.area.join(' / ');
-                    th.innerHTML = `<span class="docente-nombre">${doc.nombre}</span><span class="docente-area">${textoAreas}</span>`;
-                } else {
-                    th.innerHTML = `<span class="docente-nombre">${doc.nombre}</span><span class="docente-area">${doc.area}</span>`;
-                }
+                th.innerHTML = `<span class="docente-nombre">${doc.nombre}</span><span class="docente-area">${doc.area}</span>`;
                 trHead.appendChild(th);
             });
 
@@ -548,84 +517,31 @@
 
                 listaActual.forEach(doc => {
                     let td = document.createElement('td');
-                    let docRegistro = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
-
-                    if (!docRegistro) {
-                        if (doc.multiArea) {
-                            docRegistro = {};
-                            doc.area.forEach(sa => docRegistro[sa] = { entregado: false, fecha: null });
-                        } else {
-                            docRegistro = { entregado: false, fecha: null };
-                        }
-                        datosMatriz[mesActual][gradoActual][semana][doc.nombre] = docRegistro;
+                    if (!datosMatriz[mesActual][gradoActual][semana][doc.nombre]) {
+                        datosMatriz[mesActual][gradoActual][semana][doc.nombre] = { entregado: false, fecha: null };
+                    }
+                    let registro = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
+                    if (typeof registro === 'boolean') {
+                        registro = { entregado: registro, fecha: null };
                     }
 
-                    if (doc.multiArea) {
-                        let container = document.createElement('div');
-                        container.className = 'subareas-container';
+                    if (registro.entregado) contChecksSemana++;
 
-                        doc.area.forEach(subArea => {
-                            if (!docRegistro[subArea]) {
-                                docRegistro[subArea] = { entregado: false, fecha: null };
-                            }
-                            let subReg = docRegistro[subArea];
-                            if (typeof subReg === 'boolean') {
-                                subReg = { entregado: subReg, fecha: null };
-                            }
-
-                            if (subReg.entregado) contChecksSemana++;
-
-                            let itemDiv = document.createElement('div');
-                            itemDiv.className = 'subarea-item';
-
-                            let lbl = document.createElement('span');
-                            lbl.className = 'subarea-label';
-                            lbl.textContent = subArea;
-
-                            let btn = document.createElement('button');
-                            btn.className = 'check-btn';
-
-                            if (subReg.entregado) {
-                                btn.classList.add('checked');
-                                btn.textContent = '✔';
-                                btn.title = `${doc.nombre} (${subArea}) - Entregado el: ${subReg.fecha}`;
-                            } else {
-                                btn.textContent = '';
-                                btn.title = `${doc.nombre} (${subArea}) - Sin entregar`;
-                            }
-
-                            btn.onclick = () => cambiarEstado(semana, doc.nombre, subArea);
-
-                            itemDiv.appendChild(lbl);
-                            itemDiv.appendChild(btn);
-                            container.appendChild(itemDiv);
-                        });
-
-                        td.appendChild(container);
+                    let btn = document.createElement('button');
+                    btn.className = 'check-btn';
+                    
+                    if (registro.entregado) {
+                        btn.classList.add('checked');
+                        btn.textContent = '✔';
+                        btn.title = `${doc.nombre} (${doc.area}) - Entregado el: ${registro.fecha}`;
                     } else {
-                        if (typeof docRegistro === 'boolean') {
-                            docRegistro = { entregado: docRegistro, fecha: null };
-                        }
-
-                        if (docRegistro.entregado) contChecksSemana++;
-
-                        let btn = document.createElement('button');
-                        btn.className = 'check-btn';
-                        
-                        if (docRegistro.entregado) {
-                            btn.classList.add('checked');
-                            btn.textContent = '✔';
-                            btn.title = `${doc.nombre} (${doc.area}) - Entregado el: ${docRegistro.fecha}`;
-                        } else {
-                            btn.textContent = '';
-                            btn.title = `${doc.nombre} (${doc.area}) - Sin entregar`;
-                        }
-
-                        btn.onclick = () => cambiarEstado(semana, doc.nombre, null);
-
-                        td.appendChild(btn);
+                        btn.textContent = '';
+                        btn.title = `${doc.nombre} (${doc.area}) - Sin entregar`;
                     }
 
+                    btn.onclick = () => cambiarEstado(semana, doc.nombre);
+
+                    td.appendChild(btn);
                     tr.appendChild(td);
                 });
 
@@ -651,19 +567,8 @@
                 let docChecks = 0;
                 semanas.forEach(semana => {
                     let reg = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
-                    if (reg) {
-                        if (doc.multiArea) {
-                            doc.area.forEach(subArea => {
-                                let subReg = reg[subArea];
-                                if (subReg && (subReg.entregado === true || subReg === true)) {
-                                    docChecks++;
-                                }
-                            });
-                        } else {
-                            if (reg.entregado === true || reg === true) {
-                                docChecks++;
-                            }
-                        }
+                    if (reg && (reg.entregado === true || reg === true)) {
+                        docChecks++;
                     }
                 });
 
@@ -693,22 +598,11 @@
             let listaActual = obtenerListaDocentesActual();
 
             semanas.forEach(semana => {
-                let entregaronDetalle = [];
+                let entregaron = [];
                 listaActual.forEach(doc => {
                     let reg = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
-                    if (reg) {
-                        if (doc.multiArea) {
-                            doc.area.forEach(subArea => {
-                                let subReg = reg[subArea];
-                                if (subReg && (subReg.entregado === true || subReg === true)) {
-                                    entregaronDetalle.push(`${doc.nombre} (${subArea})`);
-                                }
-                            });
-                        } else {
-                            if (reg.entregado === true || reg === true) {
-                                entregaronDetalle.push(doc.nombre);
-                            }
-                        }
+                    if (reg && (reg.entregado === true || reg === true)) {
+                        entregaron.push(doc.nombre);
                     }
                 });
 
@@ -720,12 +614,12 @@
                 divSemana.appendChild(tituloSem);
 
                 let spanCant = document.createElement('span');
-                if (entregaronDetalle.length === 0) {
+                if (entregaron.length === 0) {
                     spanCant.style.color = '#64748b';
                     spanCant.textContent = 'Ninguna entrega registrada aún';
                 } else {
                     spanCant.style.color = '#065f46';
-                    spanCant.textContent = `${entregaronDetalle.length} entrega(s) registrada(s) (${entregaronDetalle.join(', ')})`;
+                    spanCant.textContent = `${entregaron.length} docente(s) entregaron (${entregaron.join(', ')})`;
                 }
                 divSemana.appendChild(spanCant);
 
@@ -734,7 +628,7 @@
         }
 
         function guardarDatos() {
-            localStorage.setItem('controlMatrizSesionesV8', JSON.stringify(datosMatriz));
+            localStorage.setItem('controlMatrizSesionesV10', JSON.stringify(datosMatriz));
             alert('¡Datos guardados correctamente en este navegador!');
         }
 
@@ -744,14 +638,7 @@
                 let listaActual = obtenerListaDocentesActual();
                 semanas.forEach(semana => {
                     listaActual.forEach(doc => {
-                        if (doc.multiArea) {
-                            datosMatriz[mesActual][gradoActual][semana][doc.nombre] = {};
-                            doc.area.forEach(subArea => {
-                                datosMatriz[mesActual][gradoActual][semana][doc.nombre][subArea] = { entregado: false, fecha: null };
-                            });
-                        } else {
-                            datosMatriz[mesActual][gradoActual][semana][doc.nombre] = { entregado: false, fecha: null };
-                        }
+                        datosMatriz[mesActual][gradoActual][semana][doc.nombre] = { entregado: false, fecha: null };
                     });
                 });
                 renderizarMatriz();
@@ -778,7 +665,8 @@
                     let contenido = JSON.parse(e.target.result);
                     if (contenido && typeof contenido === 'object') {
                         datosMatriz = contenido;
-                        localStorage.setItem('controlMatrizSesionesV8', JSON.stringify(datosMatriz));
+                        localStorage.setItem('controlMatrizSesionesV10', JSON.stringify(datosMatriz));
+                        actualizarSelectMeses();
                         asegurarDatosMesGrado();
                         actualizarTitulo();
                         renderizarMatriz();
@@ -794,6 +682,8 @@
             event.target.value = '';
         }
 
+        // Inicialización
+        actualizarSelectMeses();
         asegurarDatosMesGrado();
         actualizarTitulo();
         renderizarMatriz();
