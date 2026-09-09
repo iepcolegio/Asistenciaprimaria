@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Semanal de Sesiones Docentes</title>
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #64748b;
+        }
+
+        .controls-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .control-group select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+            outline: none;
+            background-color: #fff;
+        }
+
+        .grade-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-grade {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 2px solid var(--primary-color);
+            background: transparent;
+            color: var(--primary-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-grade.active, .btn-grade:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .th-semana {
+            background-color: #e2e8f0;
+            font-weight: bold;
+            text-align: left;
+            padding-left: 15px;
+            white-space: nowrap;
+        }
+
+        .td-semana {
+            font-weight: bold;
+            text-align: left;
+            background-color: #f8fafc;
+            padding-left: 15px;
+            white-space: nowrap;
+        }
+
+        .th-total, .td-total {
+            background-color: #f1f5f9;
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .docente-nombre {
+            font-weight: bold;
+            display: block;
+        }
+
+        .docente-area {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: normal;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Contenedor para múltiples áreas de un mismo docente en una celda */
+        .subareas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .subarea-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .subarea-label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #334155;
+            background: #e2e8f0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            min-width: 75px;
+            text-align: center;
+        }
+
+        .check-btn {
+            font-size: 18px;
+            background: none;
+            border: 2px solid #cbd5e1;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .check-btn:hover {
+            border-color: var(--success-color);
+            background-color: #f0fdf4;
+        }
+
+        .check-btn.checked {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn-main {
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save { background-color: var(--success-color); }
+        .btn-print { background-color: #475569; }
+        .btn-export { background-color: #2563eb; }
+        .btn-import { background-color: var(--warning-color); color: #1e293b; }
+        .btn-delete { background-color: var(--danger-color); }
+        .btn-main:hover { opacity: 0.9; }
+
+        .summary-box {
+            background-color: #eff6ff;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px 20px;
+            border-radius: 0 12px 12px 0;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .summary-box h3 {
+            margin-top: 0;
+            color: #1e40af;
+        }
+
+        @media print {
+            .controls-container, .actions-bar, .check-btn {
+                border: none !important;
+            }
+            .check-btn.checked {
+                background: none !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .controls-container, .actions-bar {
+                display: none !important;
+            }
+            body {
+                background: white;
+            }
+            .card {
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Control Semanal de Sesiones Docentes</h1>
+            <p>Matriz de registro por mes, grado, semanas y docentes</p>
+        </header>
+
+        <!-- Controles: Mes y Grado -->
+        <div class="controls-container">
+            <div class="control-group">
+                <label for="select-mes">Seleccionar Mes:</label>
+                <select id="select-mes" onchange="cambiarMes(this.value)">
+                    <option value="Marzo">Marzo</option>
+                    <option value="Abril">Abril</option>
+                    <option value="Mayo">Mayo</option>
+                    <option value="Junio">Junio</option>
+                    <option value="Julio">Julio</option>
+                    <option value="Agosto">Agosto</option>
+                    <option value="Septiembre" selected>Septiembre</option>
+                    <option value="Octubre">Octubre</option>
+                    <option value="Noviembre">Noviembre</option>
+                    <option value="Diciembre">Diciembre</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Seleccionar Grado:</label>
+                <div class="grade-selector">
+                    <button class="btn-grade active" onclick="cambiarGrado('3°')">3° Grado</button>
+                    <button class="btn-grade" onclick="cambiarGrado('4°')">4° Grado</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matriz de Registro -->
+        <div class="card">
+            <h2 id="titulo-matriz" style="margin-top: 0; color: #334155; font-size: 18px; text-align: left;">Matriz de Control - 3° Grado (Septiembre)</h2>
+            <div style="overflow-x: auto;">
+                <table id="tabla-matriz">
+                    <!-- Se llena dinámicamente con JavaScript -->
+                </table>
+            </div>
+        </div>
+
+        <!-- Barra de Botones de Acción -->
+        <div class="actions-bar">
+            <button class="btn-main btn-save" onclick="guardarDatos()">💾 Guardar</button>
+            <button class="btn-main btn-export" onclick="exportarDatos()">📤 Exportar JSON</button>
+            <button class="btn-main btn-import" onclick="document.getElementById('input-file').click()">📥 Importar JSON</button>
+            <input type="file" id="input-file" style="display: none;" accept=".json" onchange="importarDatos(event)">
+            <button class="btn-main btn-delete" onclick="limpiarCeldas()">🗑️ Limpiar Celdas</button>
+            <button class="btn-main btn-print" onclick="window.print()">🖨️ Imprimir</button>
+        </div>
+
+        <!-- Resumen Dinámico -->
+        <div class="summary-box">
+            <h3>Resumen de Entregas - <span id="txt-mes-actual">Septiembre</span> (<span id="txt-grado-actual">3°</span>)</h3>
+            <div id="contenedor-resumen-semanas">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const docentes3 = [
+            { nombre: "WILLIAM GARCIA RAMOS", area: "CC.SS" },
+            { nombre: "FRANCISCO EMERSON ALVAREZ H.", area: "COMUNICACION" },
+            { nombre: "RICHARD CALAGUA LA ROSA", area: "EPT" },
+            { nombre: "RUBEN AURIS PARIONA", area: "CYT" },
+            { nombre: "GERARDO YEREN BAUTISTA", area: "ARTE / OTROS" },
+            { nombre: "BENITO QUISPE ARIAS", area: "RELIGION" },
+            { nombre: "KATHIA ESPINOZA FALCON", area: "INGLES" },
+            { nombre: "PABLO ECHEANDIA MARTINEZ", area: "MATEMATICA" },
+            { nombre: "JUDITH PACHECO GARCIA", area: "FISICA" }
+        ];
+
+        const docentes4 = [
+            { nombre: "WILLIAM GARCIA RAMOS", area: "CC.SS" },
+            { nombre: "RICHARD CALAGUA LA ROSA", area: "EPT" },
+            { nombre: "RUBEN AURIS PARIONA", area: "CYT" },
+            { nombre: "GERARDO YEREN BAUTISTA", area: "ARTE / OTROS" },
+            { nombre: "BENITO QUISPE ARIAS", area: "RELIGION" },
+            { nombre: "KATHIA ESPINOZA FALCON", area: "INGLES" },
+            { nombre: "HILDA HUAPAYA MANCO", area: "EDUCACIÓN PARA EL TRABAJO" },
+            { nombre: "ROSIO SOLIS MALLMA", area: ["COMUNICACION", "INGLES", "DPCC"], multiArea: true },
+            { nombre: "DORIS DONAYRE SOLIS", area: "COMUNICACION" },
+            { nombre: "JUDITH PACHECO GARCIA", area: "FISICA" }
+        ];
+
+        const mesesSemanas = {
+            "Marzo": ["Semana 1 (Del 02 al 06 de Marzo)", "Semana 2 (Del 09 al 13 de Marzo)", "Semana 3 (Del 16 al 20 de Marzo)", "Semana 4 (Del 23 al 27 de Marzo)"],
+            "Abril": ["Semana 1 (Del 06 al 10 de Abril)", "Semana 2 (Del 13 al 17 de Abril)", "Semana 3 (Del 20 al 24 de Abril)", "Semana 4 (Del 27 al 30 de Abril)"],
+            "Mayo": ["Semana 1 (Del 04 al 08 de Mayo)", "Semana 2 (Del 11 al 15 de Mayo)", "Semana 3 (Del 18 al 22 de Mayo)", "Semana 4 (Del 25 al 29 de Mayo)"],
+            "Junio": ["Semana 1 (Del 01 al 05 de Junio)", "Semana 2 (Del 08 al 12 de Junio)", "Semana 3 (Del 15 al 19 de Junio)", "Semana 4 (Del 22 al 26 de Junio)"],
+            "Julio": ["Semana 1 (Del 06 al 10 de Julio)", "Semana 2 (Del 13 al 17 de Julio)", "Semana 3 (Del 20 al 24 de Julio)", "Semana 4 (Del 27 al 31 de Julio)"],
+            "Agosto": ["Semana 1 (Del 03 al 07 de Agosto)", "Semana 2 (Del 10 al 14 de Agosto)", "Semana 3 (Del 17 al 21 de Agosto)", "Semana 4 (Del 24 al 28 de Agosto)"],
+            "Septiembre": ["Semana 1 (Del 02 al 06 de Septiembre)", "Semana 2 (Del 09 al 13 de Septiembre)", "Semana 3 (Del 16 al 20 de Septiembre)", "Semana 4 (Del 23 al 27 de Septiembre)"],
+            "Octubre": ["Semana 1 (Del 05 al 09 de Octubre)", "Semana 2 (Del 12 al 16 de Octubre)", "Semana 3 (Del 19 al 23 de Octubre)", "Semana 4 (Del 26 al 30 de Octubre)"],
+            "Noviembre": ["Semana 1 (Del 02 al 06 de Noviembre)", "Semana 2 (Del 09 al 13 de Noviembre)", "Semana 3 (Del 16 al 20 de Noviembre)", "Semana 4 (Del 23 al 27 de Noviembre)"],
+            "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)"]
+        };
+
+        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV8')) || {};
+
+        let mesActual = "Septiembre";
+        let gradoActual = "3°";
+
+        function obtenerListaDocentesActual() {
+            return gradoActual === "3°" ? docentes3 : docentes4;
+        }
+
+        function asegurarDatosMesGrado() {
+            if (!datosMatriz[mesActual]) {
+                datosMatriz[mesActual] = {};
+            }
+            if (!datosMatriz[mesActual][gradoActual]) {
+                let semanas = mesesSemanas[mesActual];
+                let listaActual = obtenerListaDocentesActual();
+                let estructura = {};
+                semanas.forEach(semana => {
+                    estructura[semana] = {};
+                    listaActual.forEach(doc => {
+                        if (doc.multiArea) {
+                            estructura[semana][doc.nombre] = {};
+                            doc.area.forEach(subArea => {
+                                estructura[semana][doc.nombre][subArea] = { entregado: false, fecha: null };
+                            });
+                        } else {
+                            estructura[semana][doc.nombre] = { entregado: false, fecha: null };
+                        }
+                    });
+                });
+                datosMatriz[mesActual][gradoActual] = estructura;
+            }
+        }
+
+        function cambiarMes(mes) {
+            mesActual = mes;
+            document.getElementById('select-mes').value = mes;
+            asegurarDatosMesGrado();
+            actualizarTitulo();
+            renderizarMatriz();
+        }
+
+        function cambiarGrado(grado) {
+            gradoActual = grado;
+            document.querySelectorAll('.btn-grade').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.textContent.includes(grado)) {
+                    btn.classList.add('active');
+                }
+            });
+            asegurarDatosMesGrado();
+            actualizarTitulo();
+            renderizarMatriz();
+        }
+
+        function actualizarTitulo() {
+            document.getElementById('titulo-matriz').textContent = `Matriz de Control - ${gradoActual} Grado (${mesActual})`;
+            document.getElementById('txt-mes-actual').textContent = mesActual;
+            document.getElementById('txt-grado-actual').textContent = gradoActual;
+        }
+
+        function cambiarEstado(semana, nombreDocente, subArea = null) {
+            let docRef = datosMatriz[mesActual][gradoActual][semana][nombreDocente];
+
+            if (subArea !== null) {
+                if (!docRef[subArea]) {
+                    docRef[subArea] = { entregado: false, fecha: null };
+                }
+                let actualObj = docRef[subArea];
+                if (typeof actualObj === 'boolean') {
+                    actualObj = { entregado: actualObj, fecha: null };
+                }
+
+                if (!actualObj.entregado) {
+                    let ahora = new Date();
+                    let fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    let horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    docRef[subArea] = {
+                        entregado: true,
+                        fecha: `${fechaFormateada} a las ${horaFormateada}`
+                    };
+                } else {
+                    docRef[subArea] = {
+                        entregado: false,
+                        fecha: null
+                    };
+                }
+            } else {
+                if (typeof docRef === 'boolean') {
+                    docRef = { entregado: docRef, fecha: null };
+                }
+
+                if (!docRef.entregado) {
+                    let ahora = new Date();
+                    let fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    let horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    
+                    datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
+                        entregado: true,
+                        fecha: `${fechaFormateada} a las ${horaFormateada}`
+                    };
+                } else {
+                    datosMatriz[mesActual][gradoActual][semana][nombreDocente] = {
+                        entregado: false,
+                        fecha: null
+                    };
+                }
+            }
+            renderizarMatriz();
+        }
+
+        function renderizarMatriz() {
+            asegurarDatosMesGrado();
+            const tabla = document.getElementById('tabla-matriz');
+            tabla.innerHTML = '';
+
+            let semanas = mesesSemanas[mesActual];
+            let listaActual = obtenerListaDocentesActual();
+
+            // 1. Encabezado principal
+            let thead = document.createElement('thead');
+            let trHead = document.createElement('tr');
+            
+            let thSemana = document.createElement('th');
+            thSemana.className = 'th-semana';
+            thSemana.textContent = 'Semanas / Docentes';
+            trHead.appendChild(thSemana);
+
+            listaActual.forEach(doc => {
+                let th = document.createElement('th');
+                if (doc.multiArea) {
+                    let textoAreas = doc.area.join(' / ');
+                    th.innerHTML = `<span class="docente-nombre">${doc.nombre}</span><span class="docente-area">${textoAreas}</span>`;
+                } else {
+                    th.innerHTML = `<span class="docente-nombre">${doc.nombre}</span><span class="docente-area">${doc.area}</span>`;
+                }
+                trHead.appendChild(th);
+            });
+
+            let thTotalSemana = document.createElement('th');
+            thTotalSemana.className = 'th-total';
+            thTotalSemana.innerHTML = 'Total Entregas<br><span style="font-size:10px; font-weight:normal;">( ✔ )</span>';
+            trHead.appendChild(thTotalSemana);
+
+            thead.appendChild(trHead);
+            tabla.appendChild(thead);
+
+            // 2. Filas de Semanas
+            let tbody = document.createElement('tbody');
+            let totalGeneralChecks = 0;
+
+            semanas.forEach(semana => {
+                let tr = document.createElement('tr');
+
+                let tdSemana = document.createElement('td');
+                tdSemana.className = 'td-semana';
+                tdSemana.textContent = semana;
+                tr.appendChild(tdSemana);
+
+                let contChecksSemana = 0;
+
+                listaActual.forEach(doc => {
+                    let td = document.createElement('td');
+                    let docRegistro = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
+
+                    if (!docRegistro) {
+                        if (doc.multiArea) {
+                            docRegistro = {};
+                            doc.area.forEach(sa => docRegistro[sa] = { entregado: false, fecha: null });
+                        } else {
+                            docRegistro = { entregado: false, fecha: null };
+                        }
+                        datosMatriz[mesActual][gradoActual][semana][doc.nombre] = docRegistro;
+                    }
+
+                    if (doc.multiArea) {
+                        let container = document.createElement('div');
+                        container.className = 'subareas-container';
+
+                        doc.area.forEach(subArea => {
+                            if (!docRegistro[subArea]) {
+                                docRegistro[subArea] = { entregado: false, fecha: null };
+                            }
+                            let subReg = docRegistro[subArea];
+                            if (typeof subReg === 'boolean') {
+                                subReg = { entregado: subReg, fecha: null };
+                            }
+
+                            if (subReg.entregado) contChecksSemana++;
+
+                            let itemDiv = document.createElement('div');
+                            itemDiv.className = 'subarea-item';
+
+                            let lbl = document.createElement('span');
+                            lbl.className = 'subarea-label';
+                            lbl.textContent = subArea;
+
+                            let btn = document.createElement('button');
+                            btn.className = 'check-btn';
+
+                            if (subReg.entregado) {
+                                btn.classList.add('checked');
+                                btn.textContent = '✔';
+                                btn.title = `${doc.nombre} (${subArea}) - Entregado el: ${subReg.fecha}`;
+                            } else {
+                                btn.textContent = '';
+                                btn.title = `${doc.nombre} (${subArea}) - Sin entregar`;
+                            }
+
+                            btn.onclick = () => cambiarEstado(semana, doc.nombre, subArea);
+
+                            itemDiv.appendChild(lbl);
+                            itemDiv.appendChild(btn);
+                            container.appendChild(itemDiv);
+                        });
+
+                        td.appendChild(container);
+                    } else {
+                        if (typeof docRegistro === 'boolean') {
+                            docRegistro = { entregado: docRegistro, fecha: null };
+                        }
+
+                        if (docRegistro.entregado) contChecksSemana++;
+
+                        let btn = document.createElement('button');
+                        btn.className = 'check-btn';
+                        
+                        if (docRegistro.entregado) {
+                            btn.classList.add('checked');
+                            btn.textContent = '✔';
+                            btn.title = `${doc.nombre} (${doc.area}) - Entregado el: ${docRegistro.fecha}`;
+                        } else {
+                            btn.textContent = '';
+                            btn.title = `${doc.nombre} (${doc.area}) - Sin entregar`;
+                        }
+
+                        btn.onclick = () => cambiarEstado(semana, doc.nombre, null);
+
+                        td.appendChild(btn);
+                    }
+
+                    tr.appendChild(td);
+                });
+
+                totalGeneralChecks += contChecksSemana;
+
+                let tdTotalSem = document.createElement('td');
+                tdTotalSem.className = 'td-total';
+                tdTotalSem.innerHTML = `<span style="color:#059669; font-size:15px;">✔ ${contChecksSemana}</span>`;
+                tr.appendChild(tdTotalSem);
+
+                tbody.appendChild(tr);
+            });
+
+            // 3. Última Fila: Total General Acumulado
+            let trTotalGlobal = document.createElement('tr');
+            let tdTituloTotal = document.createElement('td');
+            tdTituloTotal.className = 'td-semana';
+            tdTituloTotal.style.backgroundColor = '#f1f5f9';
+            tdTituloTotal.innerHTML = 'TOTAL GENERAL';
+            trTotalGlobal.appendChild(tdTituloTotal);
+
+            listaActual.forEach(doc => {
+                let docChecks = 0;
+                semanas.forEach(semana => {
+                    let reg = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
+                    if (reg) {
+                        if (doc.multiArea) {
+                            doc.area.forEach(subArea => {
+                                let subReg = reg[subArea];
+                                if (subReg && (subReg.entregado === true || subReg === true)) {
+                                    docChecks++;
+                                }
+                            });
+                        } else {
+                            if (reg.entregado === true || reg === true) {
+                                docChecks++;
+                            }
+                        }
+                    }
+                });
+
+                let tdDocTotal = document.createElement('td');
+                tdDocTotal.className = 'td-total';
+                tdDocTotal.innerHTML = `<span style="color:#059669;">✔ ${docChecks}</span>`;
+                trTotalGlobal.appendChild(tdDocTotal);
+            });
+
+            let tdEsquinaFinal = document.createElement('td');
+            tdEsquinaFinal.className = 'td-total';
+            tdEsquinaFinal.style.backgroundColor = '#e2e8f0';
+            tdEsquinaFinal.innerHTML = `<strong>Total Mes</strong><br><span style="color:#059669; font-size:15px;">✔ ${totalGeneralChecks}</span>`;
+            trTotalGlobal.appendChild(tdEsquinaFinal);
+
+            tbody.appendChild(trTotalGlobal);
+            tabla.appendChild(tbody);
+
+            actualizarResumen();
+        }
+
+        function actualizarResumen() {
+            const contenedorResumen = document.getElementById('contenedor-resumen-semanas');
+            contenedorResumen.innerHTML = '';
+
+            let semanas = mesesSemanas[mesActual];
+            let listaActual = obtenerListaDocentesActual();
+
+            semanas.forEach(semana => {
+                let entregaronDetalle = [];
+                listaActual.forEach(doc => {
+                    let reg = datosMatriz[mesActual][gradoActual][semana][doc.nombre];
+                    if (reg) {
+                        if (doc.multiArea) {
+                            doc.area.forEach(subArea => {
+                                let subReg = reg[subArea];
+                                if (subReg && (subReg.entregado === true || subReg === true)) {
+                                    entregaronDetalle.push(`${doc.nombre} (${subArea})`);
+                                }
+                            });
+                        } else {
+                            if (reg.entregado === true || reg === true) {
+                                entregaronDetalle.push(doc.nombre);
+                            }
+                        }
+                    }
+                });
+
+                let divSemana = document.createElement('div');
+                divSemana.style.marginBottom = '10px';
+                
+                let tituloSem = document.createElement('strong');
+                tituloSem.textContent = `${semana}: `;
+                divSemana.appendChild(tituloSem);
+
+                let spanCant = document.createElement('span');
+                if (entregaronDetalle.length === 0) {
+                    spanCant.style.color = '#64748b';
+                    spanCant.textContent = 'Ninguna entrega registrada aún';
+                } else {
+                    spanCant.style.color = '#065f46';
+                    spanCant.textContent = `${entregaronDetalle.length} entrega(s) registrada(s) (${entregaronDetalle.join(', ')})`;
+                }
+                divSemana.appendChild(spanCant);
+
+                contenedorResumen.appendChild(divSemana);
+            });
+        }
+
+        function guardarDatos() {
+            localStorage.setItem('controlMatrizSesionesV8', JSON.stringify(datosMatriz));
+            alert('¡Datos guardados correctamente en este navegador!');
+        }
+
+        function limpiarCeldas() {
+            if (confirm(`¿Estás seguro de dejar en blanco todas las celdas para ${gradoActual} Grado en el mes de ${mesActual}?`)) {
+                let semanas = mesesSemanas[mesActual];
+                let listaActual = obtenerListaDocentesActual();
+                semanas.forEach(semana => {
+                    listaActual.forEach(doc => {
+                        if (doc.multiArea) {
+                            datosMatriz[mesActual][gradoActual][semana][doc.nombre] = {};
+                            doc.area.forEach(subArea => {
+                                datosMatriz[mesActual][gradoActual][semana][doc.nombre][subArea] = { entregado: false, fecha: null };
+                            });
+                        } else {
+                            datosMatriz[mesActual][gradoActual][semana][doc.nombre] = { entregado: false, fecha: null };
+                        }
+                    });
+                });
+                renderizarMatriz();
+            }
+        }
+
+        function exportarDatos() {
+            let datosStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosMatriz, null, 2));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", datosStr);
+            downloadAnchor.setAttribute("download", "control_sesiones_docentes.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importarDatos(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let contenido = JSON.parse(e.target.result);
+                    if (contenido && typeof contenido === 'object') {
+                        datosMatriz = contenido;
+                        localStorage.setItem('controlMatrizSesionesV8', JSON.stringify(datosMatriz));
+                        asegurarDatosMesGrado();
+                        actualizarTitulo();
+                        renderizarMatriz();
+                        alert('¡Datos importados exitosamente!');
+                    } else {
+                        alert('El archivo no tiene el formato correcto.');
+                    }
+                } catch (error) {
+                    alert('Error al leer el archivo JSON.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        asegurarDatosMesGrado();
+        actualizarTitulo();
+        renderizarMatriz();
+    </script>
+</body>
+</html>
