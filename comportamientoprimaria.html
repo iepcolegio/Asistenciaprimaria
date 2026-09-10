@@ -368,7 +368,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             </select>`;
         }
 
-        async function cargarDatos() {
+       async function cargarDatos() {
             const tbody = document.getElementById('cuerpoTabla');
             tbody.innerHTML = '<tr><td colspan="9">Cargando datos desde la nube...</td></tr>';
 
@@ -384,6 +384,32 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 return;
             }
 
+            // SI LA NUBE ESTÁ VACÍA PARA ESTE GRADO, INSERTAMOS LOS PREDETERMINADOS AUTOMÁTICAMENTE
+            if (data.length === 0 && alumnosPredeterminados[gradoActual]) {
+                const listaInicial = alumnosPredeterminados[gradoActual].map(alumno => ({
+                    grado: gradoActual,
+                    nombre_estudiante: alumno.nombre,
+                    c1: alumno.c1 || 'A',
+                    c2: alumno.c2 || 'A',
+                    c3: alumno.c3 || 'A',
+                    c4: alumno.c4 || 'A',
+                    c5: alumno.c5 || 'A',
+                    logro: 'A'
+                }));
+
+                const { data: newData, error: insertError } = await supabaseClient
+                    .from('registros_docente')
+                    .insert(listaInicial)
+                    .select();
+
+                if (insertError) {
+                    console.error('Error al insertar datos iniciales:', insertError);
+                } else {
+                    // Volvemos a consultar para obtener los datos ya con sus IDs de Supabase
+                    return cargarDatos();
+                }
+            }
+
             baseDatos[gradoActual] = data.map(item => ({
                 id: item.id, // ID único de Supabase
                 nombre: item.nombre_estudiante,
@@ -397,7 +423,6 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
             renderizarTablaLocal();
         }
-
         // Función auxiliar para pintar la tabla en pantalla con los datos actuales
         function renderizarTablaLocal() {
             const tbody = document.getElementById('cuerpoTabla');
