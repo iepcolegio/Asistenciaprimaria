@@ -368,7 +368,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             </select>`;
         }
 
-       async function cargarDatos() {
+      async function cargarDatos() {
             const tbody = document.getElementById('cuerpoTabla');
             tbody.innerHTML = '<tr><td colspan="9">Cargando datos desde la nube...</td></tr>';
 
@@ -381,11 +381,12 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             if (error) {
                 console.error('Error al cargar:', error);
                 alert('Hubo un error al cargar los datos de la nube.');
+                tbody.innerHTML = '<tr><td colspan="9" style="color: red;">Error al conectar con la nube.</td></tr>';
                 return;
             }
 
-            // SI LA NUBE ESTÁ VACÍA PARA ESTE GRADO, INSERTAMOS LOS PREDETERMINADOS AUTOMÁTICAMENTE
-            if (data.length === 0 && alumnosPredeterminados[gradoActual]) {
+            // Si la nube está vacía, intentamos insertar los predeterminados UNA SOLA VEZ
+            if (data.length === 0 && typeof alumnosPredeterminados !== 'undefined' && alumnosPredeterminados[gradoActual]) {
                 const listaInicial = alumnosPredeterminados[gradoActual].map(alumno => ({
                     grado: gradoActual,
                     nombre_estudiante: alumno.nombre,
@@ -397,21 +398,39 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                     logro: 'A'
                 }));
 
-                const { data: newData, error: insertError } = await supabaseClient
-                    .from('registros_docente')
-                    .insert(listaInicial)
-                    .select();
+                if (listaInicial.length > 0) {
+                    const { error: insertError } = await supabaseClient
+                        .from('registros_docente')
+                        .insert(listaInicial);
 
-                if (insertError) {
-                    console.error('Error al insertar datos iniciales:', insertError);
-                } else {
-                    // Volvemos a consultar para obtener los datos ya con sus IDs de Supabase
-                    return cargarDatos();
+                    if (insertError) {
+                        console.error('Error al insertar datos iniciales:', insertError);
+                    } else {
+                        // Recargamos una sola vez después de insertar con éxito
+                        const { data: newData } = await supabaseClient
+                            .from('registros_docente')
+                            .select('*')
+                            .eq('grado', gradoActual)
+                            .order('nombre_estudiante', { ascending: true });
+                        
+                        baseDatos[gradoActual] = (newData || []).map(item => ({
+                            id: item.id,
+                            nombre: item.nombre_estudiante,
+                            c1: item.c1 || 'A',
+                            c2: item.c2 || 'A',
+                            c3: item.c3 || 'A',
+                            c4: item.c4 || 'A',
+                            c5: item.c5 || 'A',
+                            logro: item.logro || 'A'
+                        }));
+                        renderizarTablaLocal();
+                        return;
+                    }
                 }
             }
 
             baseDatos[gradoActual] = data.map(item => ({
-                id: item.id, // ID único de Supabase
+                id: item.id,
                 nombre: item.nombre_estudiante,
                 c1: item.c1 || 'A',
                 c2: item.c2 || 'A',
