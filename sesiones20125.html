@@ -351,17 +351,18 @@
             "IV Bimestre": ["Noviembre", "Diciembre"]
         };
 
+        // Semanas ajustadas estrictamente de Lunes a Viernes según el inicio de cada mes en 2026
         const mesesSemanas = {
-            "Marzo": ["Semana 1 (Del 02 al 06 de Marzo)", "Semana 2 (Del 09 al 13 de Marzo)", "Semana 3 (Del 16 al 20 de Marzo)", "Semana 4 (Del 23 al 27 de Marzo)"],
-            "Abril": ["Semana 1 (Del 06 al 10 de Abril)", "Semana 2 (Del 13 al 17 de Abril)", "Semana 3 (Del 20 al 24 de Abril)", "Semana 4 (Del 27 al 30 de Abril)"],
-            "Mayo": ["Semana 1 (Del 04 al 08 de Mayo)", "Semana 2 (Del 11 al 15 de Mayo)", "Semana 3 (Del 18 al 22 de Mayo)", "Semana 4 (Del 25 al 29 de Mayo)"],
-            "Junio": ["Semana 1 (Del 01 al 05 de Junio)", "Semana 2 (Del 08 al 12 de Junio)", "Semana 3 (Del 15 al 19 de Junio)", "Semana 4 (Del 22 al 26 de Junio)"],
-            "Julio": ["Semana 1 (Del 06 al 10 de Julio)", "Semana 2 (Del 13 al 17 de Julio)", "Semana 3 (Del 20 al 24 de Julio)", "Semana 4 (Del 27 al 31 de Julio)"],
-            "Agosto": ["Semana 1 (Del 03 al 07 de Agosto)", "Semana 2 (Del 10 al 14 de Agosto)", "Semana 3 (Del 17 al 21 de Agosto)", "Semana 4 (Del 24 al 28 de Agosto)"],
-            "Septiembre": ["Semana 1 (Del 02 al 06 de Septiembre)", "Semana 2 (Del 09 al 13 de Septiembre)", "Semana 3 (Del 16 al 20 de Septiembre)", "Semana 4 (Del 23 al 27 de Septiembre)"],
-            "Octubre": ["Semana 1 (Del 05 al 09 de Octubre)", "Semana 2 (Del 12 al 16 de Octubre)", "Semana 3 (Del 19 al 23 de Octubre)", "Semana 4 (Del 26 al 30 de Octubre)"],
-            "Noviembre": ["Semana 1 (Del 02 al 06 de Noviembre)", "Semana 2 (Del 09 al 13 de Noviembre)", "Semana 3 (Del 16 al 20 de Noviembre)", "Semana 4 (Del 23 al 27 de Noviembre)"],
-            "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)"]
+            "Marzo": ["Semana 1 (Del 02 al 06 de Marzo)", "Semana 2 (Del 09 al 13 de Marzo)", "Semana 3 (Del 16 al 20 de Marzo)", "Semana 4 (Del 23 al 27 de Marzo)", "Semana 5 (Del 30 al 31 de Marzo)"],
+            "Abril": ["Semana 1 (Del 01 al 03 de Abril)", "Semana 2 (Del 06 al 10 de Abril)", "Semana 3 (Del 13 al 17 de Abril)", "Semana 4 (Del 20 al 24 de Abril)", "Semana 5 (Del 27 al 30 de Abril)"],
+            "Mayo": ["Semana 1 (Del 01 al 01 de Mayo)", "Semana 2 (Del 04 al 08 de Mayo)", "Semana 3 (Del 11 al 15 de Mayo)", "Semana 4 (Del 18 al 22 de Mayo)", "Semana 5 (Del 25 al 29 de Mayo)"],
+            "Junio": ["Semana 1 (Del 01 al 05 de Junio)", "Semana 2 (Del 08 al 12 de Junio)", "Semana 3 (Del 15 al 19 de Junio)", "Semana 4 (Del 22 al 26 de Junio)", "Semana 5 (Del 29 al 30 de Junio)"],
+            "Julio": ["Semana 1 (Del 01 al 03 de Julio)", "Semana 2 (Del 06 al 10 de Julio)", "Semana 3 (Del 13 al 17 de Julio)", "Semana 4 (Del 20 al 24 de Julio)", "Semana 5 (Del 27 al 31 de Julio)"],
+            "Agosto": ["Semana 1 (Del 03 al 07 de Agosto)", "Semana 2 (Del 10 al 14 de Agosto)", "Semana 3 (Del 17 al 21 de Agosto)", "Semana 4 (Del 24 al 28 de Agosto)", "Semana 5 (Del 31 al 31 de Agosto)"],
+            "Septiembre": ["Semana 1 (Del 01 al 04 de Septiembre)", "Semana 2 (Del 07 al 11 de Septiembre)", "Semana 3 (Del 14 al 18 de Septiembre)", "Semana 4 (Del 21 al 25 de Septiembre)", "Semana 5 (Del 28 al 30 de Septiembre)"],
+            "Octubre": ["Semana 1 (Del 01 al 02 de Octubre)", "Semana 2 (Del 05 al 09 de Octubre)", "Semana 3 (Del 12 al 16 de Octubre)", "Semana 4 (Del 19 al 23 de Octubre)", "Semana 5 (Del 26 al 30 de Octubre)"],
+            "Noviembre": ["Semana 1 (Del 02 al 06 de Noviembre)", "Semana 2 (Del 09 al 13 de Noviembre)", "Semana 3 (Del 16 al 20 de Noviembre)", "Semana 4 (Del 23 al 27 de Noviembre)", "Semana 5 (Del 30 al 30 de Noviembre)"],
+            "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)", "Semana 5 (Del 28 al 31 de Diciembre)"]
         };
 
         let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV10')) || {};
