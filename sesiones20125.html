@@ -364,8 +364,8 @@
             "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)", "Semana 5 (Del 28 al 31 de Diciembre)"]
         };
 
-        // Clave actualizada a V11 para evitar cargar datos obsoletos del navegador o GitHub Pages
-        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV11')) || {};
+        // Clave actualizada a V12 para refrescar los datos correctamente
+        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV12')) || {};
 
         let bimestreActual = "III Bimestre";
         let mesActual = "Septiembre";
@@ -629,7 +629,7 @@
         }
 
         function guardarDatos() {
-            localStorage.setItem('controlMatrizSesionesV11', JSON.stringify(datosMatriz));
+            localStorage.setItem('controlMatrizSesionesV12', JSON.stringify(datosMatriz));
             alert('¡Datos guardados correctamente en este navegador!');
         }
 
@@ -666,7 +666,7 @@
                     let contenido = JSON.parse(e.target.result);
                     if (contenido && typeof contenido === 'object') {
                         datosMatriz = contenido;
-                        localStorage.setItem('controlMatrizSesionesV11', JSON.stringify(datosMatriz));
+                        localStorage.setItem('controlMatrizSesionesV12', JSON.stringify(datosMatriz));
                         actualizarSelectMeses();
                         asegurarDatosMesGrado();
                         actualizarTitulo();
