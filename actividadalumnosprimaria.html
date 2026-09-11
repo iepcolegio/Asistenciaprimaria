@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro y Control por Grado de Primaria</title>
+    <!-- Librería SheetJS con estilos (xlsx-js-style) para dar colores, bordes y fuentes al exportar a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --primary-hover: #4338ca;
+            --danger-color: #ef4444;
+            --danger-hover: #dc2626;
+            --success-color: #10b981;
+            --success-hover: #059669;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            align-items: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .header-panel div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .header-panel label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .header-panel select, .header-panel input {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            font-size: 15px;
+            background: white;
+        }
+
+        /* Encabezado para impresión */
+        .print-header {
+            display: none;
+        }
+
+        .actions-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: space-between;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        .btn-danger:hover {
+            background-color: var(--danger-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+        .btn-success:hover {
+            background-color: var(--success-hover);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 2px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        /* Ajuste específico para hacer la columna N° más estrecha */
+        th.col-num, td.col-num {
+            width: 35px !important;
+            max-width: 40px !important;
+            text-align: center;
+            padding: 8px 4px;
+        }
+
+        th {
+            background-color: #e0e7ff;
+            font-weight: bold;
+            color: #312e81;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .row-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        /* Configuración específica para Impresión */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            .header-panel, .actions-bar, .row-actions, th:last-child, td:last-child {
+                display: none !important;
+            }
+            .print-header {
+                display: block !important;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #334155;
+                padding-bottom: 12px;
+            }
+            .print-header h3 {
+                margin: 0 0 12px 0;
+                text-align: center;
+                color: #1e293b;
+                font-size: 20px;
+                background-color: #e0e7ff;
+                padding: 8px;
+                border-radius: 4px;
+                -webkit-print-color-adjust: exact;
+            }
+            .print-info-grid {
+                display: flex;
+                justify-content: space-between;
+                font-size: 14px;
+                font-weight: bold;
+                color: #1e293b;
+                background: #f1f5f9;
+                padding: 8px 12px;
+                border-radius: 4px;
+                -webkit-print-color-adjust: exact;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            th, td {
+                border: 2px solid #000000 !important;
+                padding: 8px;
+            }
+            th.col-num, td.col-num {
+                width: 35px !important;
+                padding: 6px 2px !important;
+            }
+            th {
+                background-color: #cbd5e1 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            input[type="text"] {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+                font-size: 13px;
+                color: #000 !important;
+            }
+            input[type="text"]::placeholder {
+                color: transparent !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Registro y Control por Grado de Primaria</h2>
+
+    <!-- Panel Superior -->
+    <div class="header-panel">
+        <div>
+            <label for="selectGradoFiltro">Seleccione el Grado a visualizar:</label>
+            <select id="selectGradoFiltro" onchange="cambiarGradoActual()">
+                <option value="1° Grado">1° Grado</option>
+                <option value="2° Grado">2° Grado</option>
+                <option value="3° Grado A">3° Grado A</option>
+                <option value="3° Grado B">3° Grado B</option>
+                <option value="4° Grado">4° Grado</option>
+                <option value="5° Grado A">5° Grado A</option>
+                <option value="5° Grado B">5° Grado B</option>
+                <option value="6° Grado A">6° Grado A</option>
+                <option value="6° Grado B">6° Grado B</option>
+            </select>
+        </div>
+        <div>
+            <label for="inputDocente">Docente Responsable:</label>
+            <input type="text" id="inputDocente" placeholder="Escriba el nombre del docente..." oninput="guardarDocente()">
+        </div>
+        <div>
+            <label for="inputFecha">Fecha:</label>
+            <input type="date" id="inputFecha">
+        </div>
+    </div>
+
+    <!-- Encabezado para impresión -->
+    <div class="print-header">
+        <h3>REGISTRO DE CONTROL Y ASISTENCIA ESCOLAR</h3>
+        <div class="print-info-grid">
+            <span id="printGradoText">Grado: </span>
+            <span id="printDocenteText">Docente: </span>
+            <span id="printFechaText">Fecha: </span>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <div>
+            <button onclick="agregarEstudiante()">+ Añadir Estudiante al Grado Actual</button>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-success" onclick="exportarExcel()">Exportar a Excel</button>
+            <button onclick="guardarTodo()">Guardar Todo</button>
+            <button onclick="prepararImpresion()">Imprimir</button>
+            <button class="btn-danger" onclick="limpiarDatos()">Reiniciar Datos</button>
+        </div>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table id="tablaEstudiantes">
+            <thead>
+                <tr>
+                    <th class="col-num">N°</th>
+                    <th>Estudiante</th>
+                    <th style="text-align: center; width: 100px;">Asistencia / Check</th>
+                    <th>Actividad</th>
+                    <th>Observación</th>
+                    <th style="width: 150px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTabla">
+                <!-- Dinámico -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const listadoInicialNombres = {
+        "1° Grado": ["ABURTO ABURTO IKER VALENTIN", "ABURTO YBAÑEZ ROSA LUCIANA", "ACUÑA GARCIA ALEXANDER JOSUE", "ACUÑA VILLALOBOS MICAELA","ARIAS VILLALOBOS DYLAN GABRIEL","BARRETO TERAN EMILY DAHANNA NATALIE","BERRU CALLE DILEMER ALEXIS","BRAVO CANDELA MAITE ALEJANDRINA","CAMPOS MERCADO GUADALUPE VALENTINA","CASTILLO NEYRA JUNIOR DANIEL", "CHAVEZ CUARESMA CATHLEEN GEORGHIANNA","COLLADO ARIAS FRANZHESCA LUANA","FLORES DELGADO AZLYN ADAYA","GARCIA FERNANDEZ NEIL ALEXANDER","LEVANO MATEO GIA XIMENA","MOZOMBITE PIZANGO JHEIMY JHISSEL","PADILLA ARIAS RAFAELA LUCIA","PIZANGO FLORES CAROLINA DAILY","SOLIS GAMONAL MIA CATALEYA ALEXANDRA"],
+        "2° Grado": ["ANGULO RAMOS MARIANO ZAID", "ARANA TORRES MATEO JACK", "ARIAS VILLALOBOS MIA ALESANDRA", "AVALOS MATOS FACUNDO GABRIEL","AVALOS SOLER WALTER KALLED SELIM", "BLANCO PANTOJA CRISTOPHER OSEIAS", "FERNANDEZ VILLALOBOS YURIA LEIYA ELELY","HERNANDEZ BANDES MELANY SAMANTHA","HUAMANI EGUSQUIZA AIZEN JAMES TADASHI   ","LOPEZ ROMERO KALEV SANTIAGO","MALASQUEZ ARIAS MARIAN ARELY","MALASQUEZ AVALOS IAN JOSE","NUÑEZ ARIRAMA ISAAC MATEO","OCHOA QUISPE LIAN GAEL","QUISPE HERNANDEZ EIVY DAFNE","QUISPE RAMOS MARIA MAGDALENA","RODRIGUEZ ANGULO MAYHA ISABELL","TENEMAS ISLA LUCIANA VALENTINA","VILLALOBOS AVALOS ADRIANO MICHAEL","ZAMUDIO SANCHEZ EIME VALENTINA"],
+        "3° Grado A": ["ABARCA TERAN BRAYAM JHAIR", "ABARCA TERAN BRIYIT ODETH", "ABURTO PEREZ JIMENA LORENZA", "ALVARO ARIAS ALEJANDRO BENJAMIN", "ARIAS RAMOS JONNY ABRAHAN","AVALOS DELGADO LOGAN MATEO","AVALOS HERRERA ALESSIA BRIANA","CAMPOS ARIAS ARIADNHY LUANETE","ESPINOZA AVALOS ANGEL WILDER","HUACHACA MARIANO SHAMIRA CRISTINA","MELGAR YAURICASA YAMILETH YASUMY","MELGAR YAURICASA YULEYMI ALIYETH","NAPAN ARIAS NOA ALVIERA","OSCCO RODRIGUEZ MILAN SEBASTIAN","PIGUAY DOMINGUEZ ANDREA ALEXANDRA","RAMOS RIVERA ALAANA FRANCCESCA","RIOS CARDENAS ASHLYE BRIZETH","RODRIGUEZ ABURTO KARIM AUGUSTO","VILLALOBOS ARIAS MATHIUS OCTAVIO"],
+        "3° Grado B": ["ABURTO OBANDO LUCAS LIAN", "ARIAS AVALOS ALEX JUNNIOR", "AVALOS CARDENAS ASTRID MIA", "AVALOS ESPINOZA DANEY KIUNMY","BERNAOLA ZAMUDIO MIKAEL ISAIAS","CHUMPITAZ DIAZ ALEXIA NIJHAN","HUAPAYA ANDRES NOAH","LEVANO RODRIGUEZ BRENDA AYNARA","ROMERO PAREDES KATALEYA ISABEL VALENTINA","VICENTE QUISPE NICOLAS MOISES","VILCA ARIAS HUGO JUAN"],
+        "4° Grado": ["ABURTO ZAVALA KALESSIA BELEN", "ALCANTARA CHUMPITAZ IVANA LUCIANA", "ARONE AVALOS JEFRFERSON DEL PIERO", "CAMPOS AVALOS ROCIO DANNIA", "CAMPOS HUAPAYA ALESSIO SANTIAGO", "CANDELA GARCIA CARLOS RAUL","CANDELA PEREZ CATALEYA YSABELLA","CARBAJAL RIVERA FERNANDA VALENTINA","CASILLA ARCOS SAORI VICTORIA","CHUCHON RAMOS JOSE LUIS","CHUMPITAZ LOPEZ MASIEL VICTORIA","CHUMPITAZ QUISPE LYAN VALENTINO","COLLADO ARIAS BRIANA KIYARI","HUAMANTUMBA ROMERO NAYELI ASHLY","LESCANO SANCHEZ SARITA KAORI","LUCENA SEVILLA AAROON ALEXANDER","MEZA CHUMPITAZ FERNANDA BEATRIZ","PISFIL FLORES EDEN DEL MILAGRO","QUISPE NIGLIO EMMANUEL SEBASTIAN","RAMOS ZAPANA, LUE MALIA VERONICA","RAMOS ARIAS ALONDRA YAZMIN","SUAREZ AVALOS STEFANO ANDRE","VILLALOBOS AVALOS ALESSIA VALESZKA"],
+        "5° Grado A": ["ABURTO RAMOS SEBASTIAN JUSTO", "AGUILAR DIAZ LUIS DAN","AVALOS ESPINOZA MAYUMI MISHELL","BARRETO TERAN CRHISTOPHER JOSUE","CARRILLO FIERRO NICK JUNIOR","CHUMPITAZ CHUMPITAZ ANTONHY NICOLAS","CHUMPITAZ CISNEROS ALESHKA SHERYL","ESPINOZA AVALOS CARLOS EDUARD JUMPIO","FLORES RAMOS DAVID ALEPH","MORAN RIVAS TIZIANA VALENTINA","PALACIOS RAMOS ROUSSE YOALIBETH","PIZANGO FLORES RANDY FAVIAN","QUISPE HERNANDEZ EVANS GAEL","QUISPE PISFIL SOFIA YOVANA","RODRIGUEZ ANGULO FLAVIA CALESI","ROMERO DAVILA KEEFREN ALEXANDER","VILLALOBOS QUISPE FREDY ARTURO"],
+        "5° Grado B": ["AMABLE ROQUE OLGA YARUMI", "ARIAS ABURTO ALICIA ISABELLA","ARIAS SALINAS JHON ANTHONY LEYNER","CAMPOS BLANCO MARTHA ARASELI","CANDELA RIOS LIAM BENJAMIN","CHUMPITAZ BELEN DYLAM FABRICIO","CHUMPITAZ PAREDES ARIANA VICTORIA","CORDOVA GARCIA LUIS RAUL","FRANCIA RAMOS DIAGO DARIELL","HERNANDEZ VALDIVIA ANDREA MILETT","HUAMAN AVALOS RAQUEL MERILUZ","MALASQUEZ BARRIENTOS JUAN DE DIOS DIXON","MALASQUEZ GUARNIZ JOHAN LIONEL","PALENCIA LUCENA SANTHIAGO ENMANUEL","PEREZ RAMOS BRITANY BRIANNA LINET","QUISPE FRANCIA FRANCHESCA CECILIA","RAMOS PEREZ NATANIEL NILUFER","RIOS GARCIA LUZ JOHANA","VICENTE MALASQUEZ FABIAN SAID","VILCA ARIAS DELIA MAGDALENA VENUS","VILLALOBOS QUISPE MARIA DE LOS ANGELES"],
+        "6° Grado A": ["ABURTO OBANDO JUAN MATHIAS", "ABURTO QUISPE VALENTINA CRISTINA", "ALCANTARA CHUMPITAZ BENJAMIN JOSEPTH", "ARIAS AVALOS ALEJANDRA VALENTINA NOEMI","ARIAS CONDORI MIRTHA SOFIA","ARIAS VILLALOBOS DAYRON FROILAN","ARIAS VILLALOBOS SANTIAGO EMILIO","ARQUIÑEVA AVALOS MARIAPAZ ABIGAIL","AVALOS ORMACHEA NICOL VALENTINA","CAMACHO ABURTO DIEGO SEBASTIAN","CAMPOS ANCCO IKER ADHEMIR","CANCHARI RAMOS AKEMY KAORY","CHUMPITAZ CHUMPITAZ STEFANY MILAGROS","CHUMPITAZ DIAZ NIJASH JACOB","CHUMPITAZ LOPEZ JEAMSS AARON","DAVILA ZAVALA MATEO DAVID","ESCALANTE VERAMENDE PRISCILLA NAOMI","FRANCIA VIDAL EVANS EDUARDO","LOPEZ ROMERO ERICK SEBASTIAN CESAR","MALASQUEZ CARRILLO ARIANA GUADALUPE","NARRO ARIAS DAILA CARMELA","NARRO ARIAS ZAIRA LUISA","PISFIL FLORES CARLOS ISRAEL","RAMOS QUISPE MILET YIRHE","REYES ARIAS HAIANA VICTORIA","RUBINO ABURTO LIAN MANUEL","RUIZ CASTELL ADRIANO MATHIAS","TASAYCO ROJAS HASABNA KERLY","TOMAS PULIDO DANNA PAOLA","VILLALOBOS VILLALOBOS SARASWATI DEVI"],
+        "6° Grado B": ["ABAD JIMENEZ YHOSTIN JHAIR", "ABURTO YBAÑEZ ASHLEY BRIANNA", "ARANA TORRES VICTOR FELIX CLEMENTE", "BRAVO RAMOS ASTRID ARLYN","HERNANDEZ MAURICIO GIA VALENTINA","HUAMANTUMBA ROMERO EMILY SOLANGE","LEON CHUMPITAZ BRIANA KERLYM"]
+    };
+
+    let estudiantes = JSON.parse(localStorage.getItem('estudiantes_primaria_grados_completo'));
+    if (!estudiantes) {
+        estudiantes = [];
+        let idContador = 1;
+        for (const [grado, nombres] of Object.entries(listadoInicialNombres)) {
+            nombres.forEach(nombre => {
+                estudiantes.push({
+                    id: idContador++,
+                    grado: grado,
+                    nombre: nombre,
+                    check: false,
+                    actividad: "",
+                    observacion: ""
+                });
+            });
+        }
+    }
+
+    let gradoActual = "1° Grado";
+    document.getElementById('inputFecha').valueAsDate = new Date();
+
+    let docentesPorGrado = JSON.parse(localStorage.getItem('docentes_por_grado')) || {};
+    document.getElementById('inputDocente').value = docentesPorGrado[gradoActual] || "";
+
+    function cambiarGradoActual() {
+        gradoActual = document.getElementById('selectGradoFiltro').value;
+        document.getElementById('inputDocente').value = docentesPorGrado[gradoActual] || "";
+        renderizarTabla();
+    }
+
+    function guardarDocente() {
+        docentesPorGrado[gradoActual] = document.getElementById('inputDocente').value;
+        localStorage.setItem('docentes_por_grado', JSON.stringify(docentesPorGrado));
+    }
+
+    function prepararImpresion() {
+        document.getElementById('printGradoText').textContent = "Grado: " + gradoActual;
+        document.getElementById('printDocenteText').textContent = "Docente: " + (document.getElementById('inputDocente').value || "No especificado");
+        const fechaVal = document.getElementById('inputFecha').value;
+        document.getElementById('printFechaText').textContent = "Fecha: " + (fechaVal ? fechaVal : "No especificada");
+        window.print();
+    }
+
+    function renderizarTabla() {
+        const tbody = document.getElementById('cuerpoTabla');
+        tbody.innerHTML = '';
+
+        const estudiantesFiltrados = estudiantes.filter(est => est.grado === gradoActual);
+
+        if (estudiantesFiltrados.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="6" style="text-align: center; color: #64748b; padding: 20px;">No hay estudiantes registrados en ${gradoActual}. Añade uno nuevo.</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+
+        estudiantesFiltrados.forEach((est, index) => {
+            const indexGlobal = estudiantes.findIndex(e => e.id === est.id);
+            const tr = document.createElement('tr');
+
+            const tdNumero = document.createElement('td');
+            tdNumero.textContent = index + 1;
+            tdNumero.className = 'col-num';
+            tdNumero.style.fontWeight = 'bold';
+
+            const tdNombre = document.createElement('td');
+            tdNombre.textContent = est.nombre;
+
+            const tdCheck = document.createElement('td');
+            tdCheck.style.textAlign = 'center';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = est.check;
+            checkbox.onchange = (e) => { 
+                estudiantes[indexGlobal].check = e.target.checked; 
+            };
+            tdCheck.appendChild(checkbox);
+
+            const tdActividad = document.createElement('td');
+            const inputActividad = document.createElement('input');
+            inputActividad.type = 'text';
+            inputActividad.value = est.actividad || '';
+            inputActividad.placeholder = 'Escribe la actividad...';
+            inputActividad.oninput = (e) => {
+                estudiantes[indexGlobal].actividad = e.target.value;
+            };
+            tdActividad.appendChild(inputActividad);
+
+            const tdObs = document.createElement('td');
+            const inputObs = document.createElement('input');
+            inputObs.type = 'text';
+            inputObs.value = est.observacion || '';
+            inputObs.placeholder = 'Escribe una observación...';
+            inputObs.oninput = (e) => {
+                estudiantes[indexGlobal].observacion = e.target.value;
+            };
+            tdObs.appendChild(inputObs);
+
+            const tdAcciones = document.createElement('td');
+            const divAcciones = document.createElement('div');
+            divAcciones.className = 'row-actions';
+
+            const btnGuardarFila = document.createElement('button');
+            btnGuardarFila.textContent = 'Guardar';
+            btnGuardarFila.className = 'btn-success';
+            btnGuardarFila.onclick = () => {
+                guardarTodo();
+                alert(`Datos de ${est.nombre} guardados.`);
+            };
+
+            const btnEliminarEstudiante = document.createElement('button');
+            btnEliminarEstudiante.textContent = 'Eliminar';
+            btnEliminarEstudiante.className = 'btn-danger';
+            btnEliminarEstudiante.onclick = () => {
+                if(confirm(`¿Estás seguro de eliminar a ${est.nombre} de ${gradoActual}?`)) {
+                    estudiantes.splice(indexGlobal, 1);
+                    renderizarTabla();
+                    guardarTodo();
+                }
+            };
+
+            divAcciones.appendChild(btnGuardarFila);
+            divAcciones.appendChild(btnEliminarEstudiante);
+            tdAcciones.appendChild(divAcciones);
+
+            tr.appendChild(tdNumero);
+            tr.appendChild(tdNombre);
+            tr.appendChild(tdCheck);
+            tr.appendChild(tdActividad);
+            tr.appendChild(tdObs);
+            tr.appendChild(tdAcciones);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function agregarEstudiante() {
+        const nombreEstudiante = prompt(`Ingrese el nombre y apellido del nuevo estudiante para ${gradoActual}:`);
+        if (!nombreEstudiante) return;
+
+        const nuevo = {
+            id: Date.now(),
+            grado: gradoActual,
+            nombre: nombreEstudiante.trim().toUpperCase(),
+            check: false,
+            actividad: "",
+            observacion: ""
+        };
+
+        estudiantes.push(nuevo);
+        renderizarTabla();
+        guardarTodo();
+    }
+
+    function guardarTodo() {
+        localStorage.setItem('estudiantes_primaria_grados_completo', JSON.stringify(estudiantes));
+        alert("¡Cambios guardados correctamente!");
+    }
+
+    function exportarExcel() {
+        const estudiantesFiltrados = estudiantes.filter(est => est.grado === gradoActual);
+        const docenteActual = document.getElementById('inputDocente').value || "No especificado";
+        const fechaActual = document.getElementById('inputFecha').value || "No especificada";
+
+        const borderStyle = {
+            top: { style: "medium", color: { rgb: "334155" } },
+            bottom: { style: "medium", color: { rgb: "334155" } },
+            left: { style: "medium", color: { rgb: "334155" } },
+            right: { style: "medium", color: { rgb: "334155" } }
+        };
+
+        const titleStyle = {
+            font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4F46E5" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: borderStyle
+        };
+
+        const infoLabelStyle = {
+            font: { bold: true, color: { rgb: "1E293B" } },
+            fill: { fgColor: { rgb: "F1F5F9" } },
+            border: borderStyle
+        };
+
+        const infoValStyle = {
+            font: { color: { rgb: "0F172A" } },
+            fill: { fgColor: { rgb: "F8FAFC" } },
+            border: borderStyle
+        };
+
+        const headerTableStyle = {
+            font: { bold: true, color: { rgb: "312E81" } },
+            fill: { fgColor: { rgb: "E0E7FF" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: borderStyle
+        };
+
+        const cellStyle = {
+            font: { color: { rgb: "1E293B" } },
+            border: borderStyle
+        };
+
+        const data = [
+            [{ v: "REGISTRO DE CONTROL Y ASISTENCIA ESCOLAR", s: titleStyle }, "", "", "", ""],
+            [{ v: "Grado:", s: infoLabelStyle }, { v: gradoActual, s: infoValStyle }, "", "", ""],
+            [{ v: "Docente Responsable:", s: infoLabelStyle }, { v: docenteActual, s: infoValStyle }, "", "", ""],
+            [{ v: "Fecha:", s: infoLabelStyle }, { v: fechaActual, s: infoValStyle }, "", "", ""],
+            [],
+            [
+                { v: "N°", s: headerTableStyle },
+                { v: "Estudiante", s: headerTableStyle },
+                { v: "Asistencia / Check", s: headerTableStyle },
+                { v: "Actividad", s: headerTableStyle },
+                { v: "Observación", s: headerTableStyle }
+            ]
+        ];
+
+        estudiantesFiltrados.forEach((est, index) => {
+            const estadoCheck = est.check ? "X" : "";
+            data.push([
+                { v: index + 1, s: { ...cellStyle, alignment: { horizontal: "center" } } },
+                { v: est.nombre, s: cellStyle },
+                { v: estadoCheck, s: { ...cellStyle, alignment: { horizontal: "center" } } },
+                { v: est.actividad || "", s: cellStyle },
+                { v: est.observacion || "", s: cellStyle }
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+            { s: { r: 1, c: 1 }, e: { r: 1, c: 4 } },
+            { s: { r: 2, c: 1 }, e: { r: 2, c: 4 } },
+            { s: { r: 3, c: 1 }, e: { r: 3, c: 4 } }
+        ];
+
+        ws['!cols'] = [
+            { wch: 4 },  // N°
+            { wch: 39 }, // Estudiante
+            { wch: 15 }, // Check
+            { wch: 20 }, // Actividad
+            { wch: 20 }  // Observación
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Control de Asistencia");
+
+        XLSX.writeFile(wb, `Registro_${gradoActual.replace(/ /g, "_")}.xlsx`);
+    }
+
+    function limpiarDatos() {
+        if(confirm("¿Deseas restablecer todos los datos a la lista original?")) {
+            localStorage.removeItem('estudiantes_primaria_grados_completo');
+            localStorage.removeItem('docentes_por_grado');
+            location.reload();
+        }
+    }
+
+    renderizarTabla();
+</script>
+
+</body>
+</html>
