@@ -351,7 +351,6 @@
             "IV Bimestre": ["Noviembre", "Diciembre"]
         };
 
-        // Semanas ajustadas estrictamente de Lunes a Viernes según el inicio de cada mes en 2026
         const mesesSemanas = {
             "Marzo": ["Semana 1 (Del 02 al 06 de Marzo)", "Semana 2 (Del 09 al 13 de Marzo)", "Semana 3 (Del 16 al 20 de Marzo)", "Semana 4 (Del 23 al 27 de Marzo)", "Semana 5 (Del 30 al 31 de Marzo)"],
             "Abril": ["Semana 1 (Del 01 al 03 de Abril)", "Semana 2 (Del 06 al 10 de Abril)", "Semana 3 (Del 13 al 17 de Abril)", "Semana 4 (Del 20 al 24 de Abril)", "Semana 5 (Del 27 al 30 de Abril)"],
@@ -365,7 +364,8 @@
             "Diciembre": ["Semana 1 (Del 01 al 04 de Diciembre)", "Semana 2 (Del 07 al 11 de Diciembre)", "Semana 3 (Del 14 al 18 de Diciembre)", "Semana 4 (Del 21 al 25 de Diciembre)", "Semana 5 (Del 28 al 31 de Diciembre)"]
         };
 
-        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV10')) || {};
+        // Clave actualizada a V11 para evitar cargar datos obsoletos del navegador o GitHub Pages
+        let datosMatriz = JSON.parse(localStorage.getItem('controlMatrizSesionesV11')) || {};
 
         let bimestreActual = "III Bimestre";
         let mesActual = "Septiembre";
@@ -629,7 +629,7 @@
         }
 
         function guardarDatos() {
-            localStorage.setItem('controlMatrizSesionesV10', JSON.stringify(datosMatriz));
+            localStorage.setItem('controlMatrizSesionesV11', JSON.stringify(datosMatriz));
             alert('¡Datos guardados correctamente en este navegador!');
         }
 
@@ -666,7 +666,7 @@
                     let contenido = JSON.parse(e.target.result);
                     if (contenido && typeof contenido === 'object') {
                         datosMatriz = contenido;
-                        localStorage.setItem('controlMatrizSesionesV10', JSON.stringify(datosMatriz));
+                        localStorage.setItem('controlMatrizSesionesV11', JSON.stringify(datosMatriz));
                         actualizarSelectMeses();
                         asegurarDatosMesGrado();
                         actualizarTitulo();
