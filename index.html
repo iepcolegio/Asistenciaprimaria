@@ -28,10 +28,11 @@
             flex-direction: column;
             padding: 20px 10px;
             box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto; /* Permite desplazamiento si hay muchos botones */
         }
 
         .sidebar h2 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             text-align: center;
             margin-bottom: 25px;
             color: #1abc9c;
@@ -45,13 +46,14 @@
             border: none;
             padding: 12px 15px;
             text-align: left;
-            font-size: 1rem;
+            font-size: 0.95rem;
             border-radius: 6px;
             cursor: pointer;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             transition: all 0.3s ease;
-            text-decoration: none; /* Importante para los enlaces */
-            display: block;        /* Importante para que ocupen todo el ancho */
+            text-decoration: none;
+            display: block;
+            width: 100%;
         }
 
         .menu-btn:hover {
@@ -65,6 +67,51 @@
             background-color: #1abc9c;
             color: #ffffff;
             font-weight: bold;
+        }
+
+        /* Estilos para menús desplegables (Dropdowns) */
+        .dropdown {
+            margin-bottom: 8px;
+        }
+
+        .dropdown-btn {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Icono de flechita para el desplegable */
+        .dropdown-btn::after {
+            content: '▼';
+            font-size: 0.75rem;
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown.open .dropdown-btn::after {
+            transform: rotate(-180deg);
+        }
+
+        /* Contenedor de submenús (oculto por defecto) */
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: rgba(0, 0, 0, 0.15);
+            border-radius: 6px;
+            padding-left: 10px;
+        }
+
+        .dropdown.open .dropdown-content {
+            max-height: 500px; /* Suficiente altura para mostrar los subelementos */
+            transition: max-height 0.3s ease-in;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+
+        .dropdown-content .menu-btn {
+            font-size: 0.85rem;
+            padding: 10px 12px;
+            margin-bottom: 4px;
         }
 
         /* Área principal derecha */
@@ -108,26 +155,46 @@
     <nav class="sidebar">
         <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
         
-        <!-- Botones normales que cargan en el Iframe -->
-        <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
-        <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
+        <!-- DESPLEGABLE: ASISTENCIA -->
+        <div class="dropdown">
+            <button class="menu-btn dropdown-btn">Asistencia</button>
+            <div class="dropdown-content">
+                <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
+                <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
+            </div>
+        </div>
         
-        <!-- ENLACES DIRECTOS (Se abren en otra pestaña de forma nativa y sin bloqueos) -->
-        <a href="comportamientoprimaria.html" target="_blank" class="menu-btn">Comportamiento Primaria</a>
-        <a href="comportamientosecundaria.html" target="_blank" class="menu-btn">Comportamiento Secundaria</a>
-        <a href="sesiones20125.html" target="_blank" class="menu-btn">Registro de sesiones</a>
-        <a href="actividadalumnosprimaria.html" target="_blank" class="menu-btn">actividad estudiantes primaria</a>
-<a href="actividadalumnossecundaria.html" target="_blank" class="menu-btn">actividad estudiantes secundaria</a>
+        <!-- DESPLEGABLE: COMPORTAMIENTO -->
+        <div class="dropdown">
+            <button class="menu-btn dropdown-btn">Comportamiento</button>
+            <div class="dropdown-content">
+                <a href="comportamientoprimaria.html" target="_blank" class="menu-btn">Comportamiento Primaria</a>
+                <a href="comportamientosecundaria.html" target="_blank" class="menu-btn">Comportamiento Secundaria</a>
+            </div>
+        </div>
+
+        <a href="sesiones20125.html" target="_blank" class="menu-btn">Registro de Sesiones</a>
+
+        <!-- DESPLEGABLE: FORMATO -->
+        <div class="dropdown">
+            <button class="menu-btn dropdown-btn">Formatos</button>
+            <div class="dropdown-content">
+                <a href="REGISTRODESAYUNOPRIMARIA.html" target="_blank" class="menu-btn">Registro Desayuno Primaria</a>
+                <a href="REGISTROALMUERZOSECUNDARIA.html" target="_blank" class="menu-btn">Registro Almuerzo Secundaria</a>
+                <a href="actividadalumnosprimaria.html" target="_blank" class="menu-btn">Actividad Estudiantes Primaria</a>
+                <a href="actividadalumnossecundaria.html" target="_blank" class="menu-btn">Actividad Estudiantes Secundaria</a>
+            </div>
+        </div>
         
-        <!-- Botones normales que cargan en el Iframe -->
+        <!-- Botones normales restantes -->
         <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas</button>
-        <button class="menu-btn" data-url="CASOS.html">Registro Tutoria</button>
-        <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Admi</button>
+        <button class="menu-btn" data-url="CASOS.html">Registro Tutoría</button>
+        <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Adm.</button>
         
-        <!-- Enlaces directos externos que ya tenías -->
+        <!-- Enlaces directos externos -->
         <a href="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank" class="menu-btn" id="doc-btn">Documentos</a>
         <a href="https://iepcolegio.github.io/ASISTENCIASECUNDARIA/" target="_blank" class="menu-btn" id="qr-btn">QR Asistencia Secundaria</a>
-      
+        <a href="https://iepcolegio.github.io/almuerzos20125/" target="_blank" class="menu-btn" id="qr-btn">Registro de Almuerzos</a>
     </nav>
 
     <!-- Área Derecha -->
@@ -140,8 +207,9 @@
         <iframe id="viewer" style="display: none;" src=""></iframe>
     </main>
 
-    <!-- JavaScript para manejar la interactividad -->
+    <!-- JavaScript para manejar la interactividad y los menús desplegables -->
     <script>
+        // Manejo de botones que cargan en el Iframe
         const buttons = document.querySelectorAll('.menu-btn[data-url]');
         const viewer = document.getElementById('viewer');
         const welcome = document.getElementById('welcome');
@@ -158,6 +226,16 @@
                 welcome.style.display = 'none';
                 viewer.style.display = 'block';
                 viewer.src = url;
+            });
+        });
+
+        // Manejo de los menús desplegables (Dropdowns)
+        const dropdownButtons = document.querySelectorAll('.dropdown-btn');
+
+        dropdownButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const dropdown = btn.parentElement;
+                dropdown.classList.toggle('open');
             });
         });
     </script>
