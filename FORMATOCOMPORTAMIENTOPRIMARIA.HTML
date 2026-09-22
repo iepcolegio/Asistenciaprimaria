@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Registro de Criterios y Logros - Institución Educativa</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media print {
+            body { background: white; color: black; }
+            .no-print, header, .no-print * { display: none !important; }
+            .print-header { display: block !important; }
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 8px; }
+            th, td { border: 1px solid #9ca3af !important; padding: 2px !important; }
+            input { border: none !important; background: transparent; font-weight: bold; text-align: center; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header institucional web -->
+    <header class="bg-indigo-900 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-700 p-3 rounded-lg">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-amber-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">REGISTRO DE EVALUACIÓN INSTITUCIONAL</h1>
+                    <p class="text-xs text-indigo-200">Control de Competencias y Criterios por Grado y Sección</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="guardarDatos()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow transition flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                </button>
+                <button onclick="imprimirReporte()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 px-4 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-print"></i> Imprimir / PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+        
+        <!-- Controles de Selección y Datos del Docente -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col gap-4 no-print">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Docente / Tutor(a):</label>
+                    <input type="text" id="inputDocente" placeholder="Apellidos y Nombres" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Mes:</label>
+                    <input type="text" id="inputMes" placeholder="Ej. Marzo" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Bimestre / Trimestre:</label>
+                    <input type="text" id="inputBimestre" placeholder="Ej. I Bimestre" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Año:</label>
+                    <input type="text" id="inputAnio" value="2026" class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium">
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 pt-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <label for="gradoSelect" class="font-semibold text-slate-700 text-sm whitespace-nowrap">Seleccionar Grado:</label>
+                    <select id="gradoSelect" onchange="cambiarGrado()" class="bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full md:w-64 p-2.5 font-medium shadow-inner">
+                        <option value="1">1° Grado</option>
+                        <option value="2">2° Grado</option>
+                        <option value="3A">3° Grado "A"</option>
+                        <option value="3B">3° Grado "B"</option>
+                        <option value="4">4° Grado</option>
+                        <option value="5A">5° Grado "A"</option>
+                        <option value="5B">5° Grado "B"</option>
+                        <option value="6A">6° Grado "A"</option>
+                        <option value="6B">6° Grado "B"</option>
+                    </select>
+                </div>
+                <div class="text-sm text-slate-500 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-indigo-600"></i>
+                    <span id="totalAlumnosLabel">Total alumnos: 0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Encabezado exclusivo para Impresión -->
+        <div class="print-header mb-4 border-b-2 border-indigo-900 pb-3">
+            <h2 class="text-lg font-bold text-center text-indigo-900 uppercase">REGISTRO DE EVALUACIÓN INSTITUCIONAL</h2>
+            <div class="grid grid-cols-2 gap-2 mt-2 text-xs font-semibold text-slate-800">
+                <div><span class="text-slate-600">DOCENTE:</span> <span id="printDocente"></span></div>
+                <div><span class="text-slate-600">GRADO Y SECCIÓN:</span> <span id="printGrado"></span></div>
+                <div><span class="text-slate-600">MES:</span> <span id="printMes"></span></div>
+                <div><span class="text-slate-600">BIMESTRE / PERIODO:</span> <span id="printBimestre"></span> - <span id="printAnio"></span></div>
+            </div>
+        </div>
+
+        <!-- Tabla de Alumnos y Criterios -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table id="tablaAlumnos" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-indigo-900 text-white text-[11px] uppercase tracking-wider text-center">
+                            <th class="p-3 w-12 border-r border-indigo-800">N°</th>
+                            <th class="p-3 text-left border-r border-indigo-800 min-w-[280px]">Apellidos y Nombres del Estudiante</th>
+                            <th class="p-3 w-28 border-r border-indigo-800 font-semibold" title="C1. Organización del tiempo">ORGANIZACION</th>
+                            <th class="p-3 w-28 border-r border-indigo-800 font-semibold" title="C2. Respeta la identidad rosarina">RESPETA IDENTIDAD</th>
+                            <th class="p-3 w-28 border-r border-indigo-800 font-semibold" title="C3. Contribución al cuidado ambiental">CUIDADO AMBIENTAL</th>
+                            <th class="p-3 w-28 border-r border-indigo-800 font-semibold" title="C4. Trato respetuoso a la comunidad educativa">TRATO RESPETUOSO</th>
+                            <th class="p-3 w-28 border-r border-indigo-800 font-semibold" title="C5. Participa en las actividades de la institución fechas cívicas">PARTICIPA DE ACTIVIDADES</th>
+                            <th class="p-3 w-24 border-r border-indigo-800 font-bold bg-indigo-950">LOGRO</th>
+                            <th class="p-3 text-left bg-indigo-950 min-w-[360px]">DESCRIPCIÓN DE CRITERIOS (C1 - C5)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 text-sm text-slate-700">
+                        <!-- Se llena dinámicamente con JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500 no-print">
+        <p>Sistema Académico Institucional &copy; 2026 - Todos los derechos reservados</p>
+    </footer>
+
+    <!-- JavaScript Base de Datos y Lógica -->
+    <script>
+        const datosAlumnos = {
+            "1": [
+                { nombre: "ABURTO ABURTO IKER VALENTIN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ABURTO YBAÑEZ ROSA LUCIANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ACUÑA GARCIA ALEXANDER JOSUE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ACUÑA VILLALOBOS MICAELA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS VILLALOBOS DYLAN GABRIEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BARRETO TERAN EMILY DAHANNA NATALIE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BERRU CALLE DILEMER ALEXIS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BRAVO CANDELA MAITE ALEJANDRINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS MERCADO GUADALUPE VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CASTILLO NEYRA JUNIOR DANIEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHAVEZ CUARESMA CATHLEEN GEORGHIANNA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "COLLADO ARIAS FRANZHESCA LUANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "FLORES DELGADO AZLYN ADAYA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "GARCIA FERNANDEZ NEIL ALEXANDER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LEVANO MATEO GIA XIMENA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PADILLA ARIAS RAFAELA LUCIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PIZANGO FLORES CAROLINA DAILY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "SOLIS GAMONAL MIA CATALEYA ALEXANDRA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "2": [
+                { nombre: "ANGULO RAMOS MARIANO ZAID", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARANA TORRES MATEO JACK", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS VILLALOBOS MIA ALESANDRA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS MATOS FACUNDO GABRIEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS SOLER WALTER KALLED SELIM", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BLANCO PANTOJA CRISTOPHER OSEIAS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CASTELL TENEMAS NAIM DARRELL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "FERNANDEZ VILLALOBOS YURIA LEIYA ELELY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HERNANDEZ BANDES MELANY SAMANTHA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LOPEZ ROMERO KALEV SANTIAGO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MALASQUEZ ARIAS MARIAN ARELY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MALASQUEZ AVALOS IAN JOSE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "NUÑEZ ARIRAMA ISAAC MATEO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "OCHOA QUISPE LIAN GAEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE HERNANDEZ EIVY DAFNE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE RAMOS MARIA MAGDALENA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RODRIGUEZ ANGULO MAYHA ISABELL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "TENEMAS ISLA LUCIANA VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS AVALOS ADRIANO MICHAEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ZAMUDIO SANCHEZ EIME VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "3A": [
+                { nombre: "ABARCA TERAN BRAYAM JHAIR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ABARCA TERAN BRIYIT ODETH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ABURTO PEREZ JIMENA LORENZA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ALVARO ARIAS ALEJANDRO BENJAMIN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS RAMOS JONNY ABRAHAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS DELGADO LOGAN MATEO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS HERRERA ALESSIA BRIANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS ARIAS ARIADNHY LUANETE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ESPINOZA AVALOS ANGEL WILDER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HUACHACA MARIANO SHAMIRA CRISTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MELGAR YAURICASA YAMILETH YASUMY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MELGAR YAURICASA YULEYMI ALIYETH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "NAPAN ARIAS NOA ALVIERA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "OSCCO RODRIGUEZ MILAN SEBASTIAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PIGUAY DOMINGUEZ ANDREA ALEXANDRA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RAMOS RIVERA ALAANA FRANCCESCA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RIOS CARDENAS ASHLYE BRIZETH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RODRIGUEZ ABURTO KARIM AUGUSTO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS ARIAS MATHIUS OCTAVIO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "3B": [
+                { nombre: "ABURTO OBANDO LUCAS LIAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS AVALOS ALEX JUNNIOR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS CARDENAS ASTRID MIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS ESPINOZA DANEY KIUNMY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BERNAOLA ZAMUDIO MIKAEL ISAIAS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ DIAZ ALEXIA NIJHAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HUAPAYA ANDRES NOAH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ROMERO PAREDES KATALEYA ISABEL VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VICENTE QUISPE NICOLAS MOISES", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILCA ARIAS HUGO JUAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "4": [
+                { nombre: "ABURTO ZAVALA KALESSIA BELEN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ALCANTARA CHUMPITAZ IVANA LUCIANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARONE AVALOS JEFRFERSON DEL PIERO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS AVALOS ROCIO DANNIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS HUAPAYA ALESSIO SANTIAGO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CANDELA GARCIA CARLOS RAUL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CANDELA PEREZ CATALEYA YSABELLA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CARBAJAL RIVERA FERNANDA VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CASILLA ARCOS SAORI VICTORIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUCHON RAMOS JOSE LUIS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ LOPEZ MASIEL VICTORIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ QUISPE LYAN VALENTINO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "COLLADO ARIAS BRIANA KIYARI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HUAMANTUMBA ROMERO NAYELI ASHLY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LESCANO SANCHEZ SARITA KAORI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LUCENA SEVILLA AAROON ALEXANDER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MEZA CHUMPITAZ FERNANDA BEATRIZ", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PISFIL FLORES EDEN DEL MILAGRO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE NIGLIO EMMANUEL SEBASTIAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RAMOS ARIAS ALONDRA YAZMIN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "SUAREZ AVALOS STEFANO ANDRE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS AVALOS ALESSIA VALESZKA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "5A": [
+                { nombre: "ABURTO RAMOS SEBASTIAN JUSTO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AGUILAR DIAZ LUIS DAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS ESPINOZA MAYUMI MISHELL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BARRETO TERAN CRHISTOPHER JOSUE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CARRILLO FIERRO NICK JUNIOR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ CHUMPITAZ ANTONHY NICOLAS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ CISNEROS ALESHKA SHERYL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ESPINOZA AVALOS CARLOS EDUARD JUMPIO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "FLORES RAMOS DAVID ALEPH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MORAN RIVAS TIZIANA VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PALACIOS RAMOS ROUSSE YOALIBETH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PIZANGO FLORES RANDY FAVIAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE HERNANDEZ EVANS GAEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE PISFIL SOFIA YOVANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RODRIGUEZ ANGULO FLAVIA CALESI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ROMERO DAVILA KEEFREN ALEXANDER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS QUISPE FREDY ARTURO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "5B": [
+                { nombre: "AMABLE ROQUE OLGA YARUMI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS ABURTO ALICIA ISABELLA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS SALINAS JHON ANTHONY LEYNER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS BLANCO MARTHA ARASELI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CANDELA RIOS LIAM BENJAMIN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ BELEN DYLAM FABRICIO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ PAREDES ARIANA VICTORIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CORDOVA GARCIA LUIS RAUL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "FRANCIA RAMOS DIAGO DARIELL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HERNANDEZ VALDIVIA ANDREA MILETT", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HUAMAN AVALOS RAQUEL MERILUZ", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MALASQUEZ BARRIENTOS JUAN DE DIOS DIXON", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MALASQUEZ GUARNIZ JOHAN LIONEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PALENCIA LUCENA SANTHIAGO ENMANUEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PEREZ RAMOS BRITANY BRIANNA LINET", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "QUISPE FRANCIA FRANCHESCA CECILIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RAMOS PEREZ NATANIEL NILUFER", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RIOS GARCIA LUZ JOHANA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VICENTE MALASQUEZ FABIAN SAID", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILCA ARIAS DELIA MAGDALENA VENUS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS QUISPE MARIA DE LOS ANGELES", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "6A": [
+                { nombre: "ABURTO OBANDO JUAN MATHIAS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ABURTO QUISPE VALENTINA CRISTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ALCANTARA CHUMPITAZ BENJAMIN JOSEPTH", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS AVALOS ALEJANDRA VALENTINA NOEMI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS CONDORI MIRTHA SOFIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS VILLALOBOS DAYRON FROILAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARIAS VILLALOBOS SANTIAGO EMILIO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARQUIÑEVA AVALOS MARIAPAZ ABIGAIL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "AVALOS ORMACHEA NICOL VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMACHO ABURTO DIEGO SEBASTIAN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CAMPOS ANCCO IKER ADHEMIR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CANCHARI RAMOS AKEMY KAORY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ CHUMPITAZ STEFANY MILAGROS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ DIAZ NIJASH JACOB", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "CHUMPITAZ LOPEZ JEAMSS AARON", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "DAVILA ZAVALA MATEO DAVID", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ESCALANTE VERAMENDE PRISCILLA NAOMI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "FRANCIA VIDAL EVANS EDUARDO", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LOPEZ ROMERO ERICK SEBASTIAN CESAR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "MALASQUEZ CARRILLO ARIANA GUADALUPE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "NARRO ARIAS DAILA CARMELA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "NARRO ARIAS ZAIRA LUISA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "PISFIL FLORES CARLOS ISRAEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RAMOS QUISPE MILET YIRHE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "REYES ARIAS HAIANA VICTORIA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RUBINO ABURTO LIAN MANUEL", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "RUIZ CASTELL ADRIANO MATHIAS", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "TASAYCO ROJAS HASABNA KERLY", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "TOMAS PULIDO DANNA PAOLA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "VILLALOBOS VILLALOBOS SARASWATI DEVI", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ],
+            "6B": [
+                { nombre: "ABAD JIMENEZ YHOSTIN JHAIR", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ABURTO YBAÑEZ ASHLEY BRIANNA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "ARANA TORRES VICTOR FELIX CLEMENTE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "BRAVO RAMOS ASTRID ARLYN", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HERNANDEZ MAURICIO GIA VALENTINA", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "HUAMANTUMBA ROMERO EMILY SOLANGE", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" },
+                { nombre: "LEON CHUMPITAZ BRIANA KERLYM", c1: "", c2: "", c3: "", c4: "", c5: "", logro: "" }
+            ]
+        };
+
+        const textoCriteriosDetallado = `
+            <div class="text-[11px] space-y-2.5 py-1 text-slate-700 leading-tight font-normal">
+                <div>
+                    <strong class="text-indigo-900 block font-bold">C1. ORGANIZACION DEL TIEMPO </strong>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 mt-0.5">
+                        <li>0 Faltas. Llega puntual | <span class="font-semibold text-purple-700">AD</span></li>
+                        <li>2 Faltas injustificadas ó de 2 a 4 tardanzas | <span class="font-semibold text-emerald-700">A</span></li>
+                        <li>4 Faltas injustificadas ó de 5 a 8 tardanzas | <span class="font-semibold text-amber-700">B</span></li>
+                        <li>Más de 4 faltas injustificadas ó más de 8 tar | <span class="font-semibold text-rose-700">C</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong class="text-indigo-900 block font-bold">C2. RESPETA LA IDENTIDAD ROSARINA </strong>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 mt-0.5">
+                        <li>Uso del uniforme, canto del Himno y corte de cabello escolar (siempre) | <span class="font-semibold text-purple-700">AD</span></li>
+                        <li>Uso del uniforme, canto del Himno y corte de cabello escolar (Casi siempre) | <span class="font-semibold text-emerald-700">A</span></li>
+                        <li>Uso del uniforme, canto del Himno y corte de cabello escolar (a veces) | <span class="font-semibold text-amber-700">B</span></li>
+                        <li>Uso del uniforme, canto del Himno y corte de cabello escolar (Nunca) | <span class="font-semibold text-rose-700">C</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong class="text-indigo-900 block font-bold">C3. CONTRIBUCION AL CUIDADO AMBIENTAL </strong>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 mt-0.5">
+                        <li>Cumple siempre los protocolos y mantiene la limpieza | <span class="font-semibold text-purple-700">AD</span></li>
+                        <li>Cumple casi siempre los protocolos y mantiene la limpieza | <span class="font-semibold text-emerald-700">A</span></li>
+                        <li>Cumple a veces los protocolos y mantiene la limpieza | <span class="font-semibold text-amber-700">B</span></li>
+                        <li>Cumple mínimamente los protocolos y mantiene la limpieza | <span class="font-semibold text-rose-700">C</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong class="text-indigo-900 block font-bold">C4. TRATO RESPETUOSO A LA COMUNIDAD EDUCATIVA </strong>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 mt-0.5">
+                        <li>Sin informe escrito o verbal | <span class="font-semibold text-purple-700">AD</span></li>
+                        <li>Un informe o incidente leve | <span class="font-semibold text-emerald-700">A</span></li>
+                        <li>Dos informes o incidente leve | <span class="font-semibold text-amber-700">B</span></li>
+                        <li>3 a 4 informes de incidencias | <span class="font-semibold text-rose-700">C</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <strong class="text-indigo-900 block font-bold">C5. PARTICIPA EN LAS ACTIVIDADES DE LA INSTITUCION FECHAS CIVICAS </strong>
+                    <ul class="list-disc pl-4 space-y-0.5 text-slate-600 mt-0.5">
+                        <li>Participa en todas las actividades | <span class="font-semibold text-purple-700">AD</span></li>
+                        <li>Participa en la mayoría de las actividades | <span class="font-semibold text-emerald-700">A</span></li>
+                        <li>Participa en algunas de las actividades | <span class="font-semibold text-amber-700">B</span></li>
+                        <li>No participa en las actividades | <span class="font-semibold text-rose-700">C</span></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        function cargarLocalStorage() {
+            const guardado = localStorage.getItem('evaluacion_alumnos_colegio');
+            if (guardado) {
+                try {
+                    const parsed = JSON.parse(guardado);
+                    if(parsed.alumnos) {
+                        for (let g in parsed.alumnos) {
+                            if (datosAlumnos[g]) {
+                                datosAlumnos[g] = parsed.alumnos[g];
+                            }
+                        }
+                    }
+                    if(parsed.docente) document.getElementById('inputDocente').value = parsed.docente;
+                    if(parsed.mes) document.getElementById('inputMes').value = parsed.mes;
+                    if(parsed.bimestre) document.getElementById('inputBimestre').value = parsed.bimestre;
+                    if(parsed.anio) document.getElementById('inputAnio').value = parsed.anio;
+                } catch(e) { console.error("Error al cargar datos guardados", e); }
+            }
+        }
+
+        function renderizarTabla() {
+            const gradoSelect = document.getElementById('gradoSelect').value;
+            const alumnos = datosAlumnos[gradoSelect] || [];
+            const tbody = document.querySelector('#tablaAlumnos tbody');
+            tbody.innerHTML = '';
+
+            document.getElementById('totalAlumnosLabel').innerText = `Total alumnos: ${alumnos.length}`;
+            const totalFilas = alumnos.length;
+
+            alumnos.forEach((alumno, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white hover:bg-slate-50 transition' : 'bg-slate-50/60 hover:bg-slate-100/60 transition';
+
+                let htmlFila = `
+                    <td class="p-3 text-center font-semibold text-slate-500 border-r border-slate-200">${index + 1}</td>
+                    <td class="p-3 font-medium text-slate-800 border-r border-slate-200">${alumno.nombre}</td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.c1 || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'c1', this.value)" class="w-full text-center font-bold text-xs uppercase bg-white border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.c2 || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'c2', this.value)" class="w-full text-center font-bold text-xs uppercase bg-white border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.c3 || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'c3', this.value)" class="w-full text-center font-bold text-xs uppercase bg-white border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.c4 || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'c4', this.value)" class="w-full text-center font-bold text-xs uppercase bg-white border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.c5 || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'c5', this.value)" class="w-full text-center font-bold text-xs uppercase bg-white border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                    <td class="p-2 text-center border-r border-slate-200"><input type="text" maxlength="2" value="${alumno.logro || ''}" oninput="actualizarDato('${gradoSelect}', ${index}, 'logro', this.value)" class="w-full text-center font-bold text-xs uppercase bg-slate-100 border border-slate-300 rounded p-1.5 focus:ring-2 focus:ring-indigo-500 shadow-sm"></td>
+                `;
+
+                if (index === 0) {
+                    htmlFila += `
+                        <td rowspan="${totalFilas}" class="p-3 text-slate-700 bg-slate-50/80 align-top border-l border-slate-300">
+                            ${textoCriteriosDetallado}
+                        </td>
+                    `;
+                }
+
+                tr.innerHTML = htmlFila;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarDato(grado, index, campo, valor) {
+            datosAlumnos[grado][index][campo] = valor.toUpperCase();
+        }
+
+        function cambiarGrado() {
+            renderizarTabla();
+        }
+
+        function guardarDatos() {
+            try {
+                const dataToSave = {
+                    alumnos: datosAlumnos,
+                    docente: document.getElementById('inputDocente').value,
+                    mes: document.getElementById('inputMes').value,
+                    bimestre: document.getElementById('inputBimestre').value,
+                    anio: document.getElementById('inputAnio').value
+                };
+                localStorage.setItem('evaluacion_alumnos_colegio', JSON.stringify(dataToSave));
+                alert("¡Cambios y datos guardados correctamente en el navegador!");
+            } catch(e) {
+                alert("Hubo un error al guardar los cambios.");
+                console.error(e);
+            }
+        }
+
+        function imprimirReporte() {
+            // Rellenar los campos del encabezado de impresión con los valores actuales
+            document.getElementById('printDocente').innerText = document.getElementById('inputDocente').value || '----------------------------------------';
+            
+            const gradoSelectEl = document.getElementById('gradoSelect');
+            document.getElementById('printGrado').innerText = gradoSelectEl.options[gradoSelectEl.selectedIndex].text;
+            
+            document.getElementById('printMes').innerText = document.getElementById('inputMes').value || '----------------';
+            document.getElementById('printBimestre').innerText = document.getElementById('inputBimestre').value || '----------------';
+            document.getElementById('printAnio').innerText = document.getElementById('inputAnio').value || '2026';
+
+            window.print();
+        }
+
+        window.onload = function() {
+            cargarLocalStorage();
+            renderizarTabla();
+        };
+    </script>
+</body>
+</html>
