@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #555;
+            margin: 0;
+            padding: 20px;
+            color: #000;
+        }
+        .sheet {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 0 auto;
+            padding: 10mm 15mm;
+            box-sizing: border-box;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            font-size: 10px;
+        }
+        
+        /* Encabezado */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 2px solid #000;
+            margin-bottom: 6px;
+        }
+        .header-table td {
+            border: 1px solid #000;
+            padding: 4px;
+            vertical-align: middle;
+        }
+        .logo-ugel {
+            text-align: center;
+            font-weight: bold;
+            font-size: 8px;
+            width: 30%;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .logo-ugel img {
+            width: 45px;
+            height: auto;
+        }
+        .titulo-fut {
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            width: 45%;
+        }
+        .recuadros-exp {
+            width: 25%;
+            font-size: 9px;
+        }
+        .recuadros-exp div {
+            border-bottom: 1px solid #000;
+            padding: 2px;
+        }
+        .recuadros-exp div:last-child {
+            border-bottom: none;
+        }
+
+        /* Secciones */
+        .section-header {
+            background-color: #dcdcdc;
+            font-weight: bold;
+            border: 1px solid #000;
+            padding: 3px 5px;
+            margin-top: 5px;
+            font-size: 10px;
+        }
+        .section-body {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 5px;
+        }
+
+        /* Campos generales */
+        input[type="text"] {
+            border: none;
+            outline: none;
+            font-size: 10px;
+            width: 100%;
+            background: transparent;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            height: 35px;
+            border: 1px solid #aaa;
+            resize: none;
+            font-size: 10px;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+
+        /* Casilla simple y limpia (sin celda contenedora externa) */
+        input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 13px;
+            height: 11px;
+            border: 1px solid #000;
+            outline: none;
+            background-color: #fff;
+            display: inline-block;
+            vertical-align: middle;
+            cursor: pointer;
+            position: relative;
+            margin: 0;
+        }
+        input[type="checkbox"]:checked::after {
+            content: 'X';
+            font-size: 9px;
+            font-weight: bold;
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            color: #000;
+        }
+
+        .box-input {
+            border: 1px solid #000;
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1px 3px;
+        }
+
+        /* Estilo específico para la Sección IV en Celdas */
+        .tipo-via-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .via-item {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .input-cell {
+            border: 1px solid #000;
+            padding: 2px;
+            background: #fff;
+        }
+
+        /* Diseño de Tipo de Zona sin celdas contenedoras */
+        .zona-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0;
+            font-size: 9px;
+        }
+        .zona-table td {
+            padding: 3px 4px;
+            vertical-align: middle;
+        }
+
+        .declaracion {
+            font-size: 9px;
+            font-weight: bold;
+            text-align: center;
+            margin: 3px 0;
+        }
+
+        /* Pie y Firma */
+        .footer-flex {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            align-items: flex-end;
+        }
+        .signature-wrapper {
+            width: 220px;
+            text-align: center;
+            position: relative;
+            cursor: pointer;
+        }
+        .signature-container-area {
+            min-height: 65px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 2px;
+        }
+        .signature-container-area img {
+            max-width: 210px;
+            max-height: 70px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 100%;
+            margin-top: 2px;
+        }
+        .signature-input-file {
+            display: none;
+        }
+        .signature-label {
+            margin-top: 2px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 12px;
+        }
+        .btn-print {
+            background-color: #b30000;
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .btn-print:hover {
+            background-color: #800000;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .sheet {
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            .btn-container {
+                display: none;
+            }
+            .signature-container-area small {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sheet">
+    <!-- ENCABEZADO -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-ugel">
+                <div class="logo-container">
+                    <img src="image_754382.png" alt="Logo UGEL 08 Cañete">
+                    <div>
+                        UGEL<br>
+                        UNIDAD DE GESTIÓN<br>
+                        EDUCATIVA LOCAL N° 08<br>
+                        CAÑETE
+                    </div>
+                </div>
+            </td>
+            <td class="titulo-fut">
+                FORMULARIO ÚNICO DE TRÁMITE<br>(FUT)
+            </td>
+            <td class="recuadros-exp">
+                <div>EXPEDIENTE: <input type="text" style="width: 45px;"></div>
+                <div>DOCUMENTO: <input type="text" style="width: 45px;"></div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- I. RESUMEN DE SU PEDIDO -->
+    <div class="section-header">I. RESUMEN DE SU PEDIDO</div>
+    <div class="section-body">
+        <textarea placeholder="Escriba brevemente su pedido..."></textarea>
+    </div>
+
+    <!-- II. DEPENDENCIA -->
+    <div class="section-header">II. DEPENDENCIA O AUTORIDAD A QUIEN SE DIRIGE</div>
+    <div class="section-body">
+        <div style="display: flex; align-items: center; gap: 5px;">
+            <span style="font-weight: bold;">Señor(a):</span>
+            <div class="input-cell" style="flex: 1;"><input type="text" placeholder="Ej. Director de la UGEL 08 Cañete"></div>
+        </div>
+    </div>
+
+    <!-- III. DATOS DEL SOLICITANTE -->
+    <div class="section-header">III. DATOS DEL SOLICITANTE</div>
+    <div class="section-body">
+        <div style="margin-bottom: 4px; display: flex; gap: 15px;">
+            <label style="font-weight: normal;"><input type="checkbox"> Persona Natural</label>
+            <label style="font-weight: normal;"><input type="checkbox"> Persona Jurídica</label>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;"><span style="font-weight: bold;">Apellido Paterno:</span><div class="input-cell" style="flex:1;"><input type="text"></div></div>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;"><span style="font-weight: bold;">Apellido Materno:</span><div class="input-cell" style="flex:1;"><input type="text"></div></div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 4px;">
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;"><span style="font-weight: bold;">Nombres:</span><div class="input-cell" style="flex:1;"><input type="text"></div></div>
+            <div style="display: flex; align-items: center; gap: 4px; flex: 1;"><span style="font-weight: bold;">Razón Social:</span><div class="input-cell" style="flex:1;"><input type="text"></div></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-weight: bold;">Tipo de Documento:</span>
+            <label style="font-weight: normal;"><input type="checkbox"> DNI</label>
+            <label style="font-weight: normal;"><input type="checkbox"> RUC</label>
+            <label style="font-weight: normal;"><input type="checkbox"> C.E.</label>
+            <span style="font-weight: bold;">N°:</span>
+            <div class="input-cell" style="width: 100px;"><input type="text"></div>
+        </div>
+    </div>
+
+    <!-- IV. DIRECCIÓN -->
+    <div class="section-header">IV. DIRECCIÓN</div>
+    <div class="section-body">
+        <!-- TIPO DE VÍA -->
+        <div class="tipo-via-row">
+            <span style="font-weight: bold; width: 85px;">TIPO DE VÍA</span>
+            <div class="via-item"><span>Avenida</span><input type="checkbox"></div>
+            <div class="via-item"><span>Jirón</span><input type="checkbox"></div>
+            <div class="via-item"><span>Calle</span><input type="checkbox"></div>
+            <div class="via-item"><span>Pasaje</span><input type="checkbox"></div>
+            <div class="via-item"><span>Carretera</span><input type="checkbox"></div>
+            <div class="via-item"><span>Prolongación</span><input type="checkbox"></div>
+        </div>
+
+        <!-- NOMBRE DE LA VÍA -->
+        <div style="margin-bottom: 4px;">
+            <span style="font-weight: bold;">Nombre de la Vía:</span>
+            <div class="input-cell" style="margin-top: 2px;"><input type="text"></div>
+        </div>
+
+        <!-- NUMERACIÓN E INMUEBLE -->
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; font-size: 9px;">
+            <span style="font-weight: bold;">Nº de Inmueble</span>
+            <div class="input-cell" style="width: 45px;"><input type="text"></div>
+            <span style="font-weight: bold;">Block</span>
+            <div class="input-cell" style="width: 45px;"><input type="text"></div>
+            <span style="font-weight: bold;">Interior</span>
+            <div class="input-cell" style="width: 45px;"><input type="text"></div>
+            <span style="font-weight: bold;">Piso</span>
+            <div class="input-cell" style="width: 30px;"><input type="text"></div>
+            <span style="font-weight: bold;">Mz.</span>
+            <div class="input-cell" style="width: 35px;"><input type="text"></div>
+            <span style="font-weight: bold;">Lote</span>
+            <div class="input-cell" style="width: 35px;"><input type="text"></div>
+            <span style="font-weight: bold;">Km.</span>
+            <div class="input-cell" style="width: 35px;"><input type="text"></div>
+            <span style="font-weight: bold;">Sector</span>
+            <div class="input-cell" style="width: 40px;"><input type="text"></div>
+        </div>
+
+        <!-- TIPO DE ZONA (Sin celda contenedora externa) -->
+        <div style="font-weight: bold; margin-bottom: 2px;">Tipo de Zona:</div>
+        <table class="zona-table">
+            <tr>
+                <td>Urbanización</td>
+                <td style="width: 20px; text-align: center;"><input type="checkbox"></td>
+                <td style="width: 15px;"></td>
+                <td>Pueblo Joven</td>
+                <td style="width: 20px; text-align: center;"><input type="checkbox"></td>
+                <td style="width: 15px;"></td>
+                <td>Unidad Vecinal</td>
+                <td style="width: 20px; text-align: center;"><input type="checkbox"></td>
+                <td style="width: 15px;"></td>
+                <td>Conj. Habitacional</td>
+                <td style="width: 20px; text-align: center;"><input type="checkbox"></td>
+                <td style="width: 15px;"></td>
+                <td>AA.HH.</td>
+                <td style="width: 20px; text-align: center;"><input type="checkbox"></td>
+            </tr>
+            <tr>
+                <td>Cooperativa</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Residencial</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Zona Industrial</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Centro Poblado</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Caserío</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+            </tr>
+            <tr>
+                <td>Asociación</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Grupo</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Fundo</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td>Otros(especificar)</td>
+                <td style="text-align: center;"><input type="checkbox"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+
+        <!-- NOMBRE DE LA ZONA Y REFERENCIA -->
+        <div style="margin-bottom: 3px;">
+            <span style="font-weight: bold;">Nombre de la Zona</span>
+            <div class="input-cell" style="margin-top: 1px;"><input type="text"></div>
+        </div>
+        <div style="margin-bottom: 3px;">
+            <span style="font-weight: bold;">Referencia</span>
+            <div class="input-cell" style="margin-top: 1px;"><input type="text"></div>
+        </div>
+
+        <!-- DEPARTAMENTO, PROVINCIA, DISTRITO -->
+        <div style="display: flex; gap: 8px; margin-bottom: 3px;">
+            <div style="flex: 1;"><span style="font-weight: bold;">Departamento</span><div class="input-cell" style="margin-top: 1px;"><input type="text" value="Lima"></div></div>
+            <div style="flex: 1;"><span style="font-weight: bold;">Provincia</span><div class="input-cell" style="margin-top: 1px;"><input type="text" value="Cañete"></div></div>
+            <div style="flex: 1;"><span style="font-weight: bold;">Distrito</span><div class="input-cell" style="margin-top: 1px;"><input type="text"></div></div>
+        </div>
+
+        <!-- TELÉFONO Y CORREO -->
+        <div style="display: flex; gap: 8px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <span style="font-weight: bold;">Teléfono</span>
+                <div class="input-cell" style="margin-top: 1px;"><input type="text"></div>
+            </div>
+            <div style="flex: 1.5; font-size: 9px; text-align: center; font-weight: bold;">
+                Autorizo se me notifique al<br>siguiente correo electrónico
+            </div>
+            <div style="flex: 1.5;">
+                <div class="input-cell" style="margin-top: 1px;"><input type="text" placeholder="correo@ejemplo.com"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="declaracion">
+        DECLARO que los datos presentados en el presente formulario los realizo con carácter de DECLARACIÓN JURADA
+    </div>
+
+    <!-- V. FUNDAMENTOS DEL PEDIDO -->
+    <div class="section-header">V. FUNDAMENTOS DEL PEDIDO</div>
+    <div class="section-body">
+        <textarea style="height: 40px;" placeholder="Detalle los fundamentos de su solicitud..."></textarea>
+    </div>
+
+    <!-- VI. DOCUMENTOS QUE SE ADJUNTAN -->
+    <div class="section-header">VI. DOCUMENTOS QUE SE ADJUNTAN</div>
+    <div class="section-body">
+        <textarea style="height: 35px;" placeholder="1. Copia de DNI..."></textarea>
+    </div>
+
+    <!-- PIE Y FIRMA -->
+    <div class="footer-flex">
+        <div style="font-size: 9px;">
+            <span style="font-weight: bold;">Lugar y Fecha:</span> 
+            <div class="input-cell" style="display: inline-block; width: 150px; margin-left: 4px;"><input type="text" placeholder="Cañete, ..."></div>
+        </div>
+        
+        <!-- ZONA DE FIRMA -->
+        <div class="signature-wrapper" onclick="document.getElementById('signatureFile').click()" title="Haz clic para subir tu firma">
+            <div class="signature-container-area">
+                <small style="font-size: 7px; color: #555; position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 100%;">(Haz clic para agregar firma)</small>
+                <div id="signaturePreviewContainer"></div>
+            </div>
+            <div class="signature-line"></div>
+            <div class="signature-label">FIRMA DEL USUARIO</div>
+            <input type="file" id="signatureFile" class="signature-input-file" accept="image/*" onchange="cargarFirma(event)">
+        </div>
+    </div>
+
+    <!-- BOTÓN IMPRIMIR -->
+    <div class="btn-container">
+        <button class="btn-print" onclick="window.print()">🖨️ IMPRIMIR / GUARDAR PDF</button>
+    </div>
+</div>
+
+<script>
+    function cargarFirma(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const container = document.getElementById('signaturePreviewContainer');
+                container.innerHTML = `<img src="${e.target.result}" alt="Firma del Usuario">`;
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    document.querySelector('.signature-wrapper').addEventListener('paste', function(e) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') === 0) {
+                const blob = items[i].getAsFile();
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const container = document.getElementById('signaturePreviewContainer');
+                    container.innerHTML = `<img src="${event.target.result}" alt="Firma del Usuario">`;
+                };
+                reader.readAsDataURL(blob);
+                e.preventDefault();
+                break;
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
