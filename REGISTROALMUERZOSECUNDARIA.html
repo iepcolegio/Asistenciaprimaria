@@ -271,18 +271,10 @@
                 <option value="6">Junio</option>
                 <option value="7">Julio</option>
                 <option value="8">Agosto</option>
-                <option value="9">Setiembre</option>
+                <option value="9">Septiembre</option>
                 <option value="10">Octubre</option>
                 <option value="11">Noviembre</option>
                 <option value="12">Diciembre</option>
-            </select>
-        </div>
-        <div>
-            <label for="selectQuincena">Periodo (Quincena):</label>
-            <select id="selectQuincena" onchange="renderizarTablaMensual()">
-                <option value="1">1ª Quincena (Sem 1-2)</option>
-                <option value="2">2ª Quincena (Sem 3-4)</option>
-                <option value="3">3ª Quincena / Resto (Sem 5+)</option>
             </select>
         </div>
         <div>
@@ -293,12 +285,11 @@
 
     <!-- Encabezado para impresión -->
     <div class="print-header">
-        <h3>REGISTRO QUINCENAL DE ASISTENCIA Y CONTROL - SECUNDARIA</h3>
+        <h3>REGISTRO MENSUAL DE ASISTENCIA Y CONTROL - SECUNDARIA</h3>
         <div class="print-info-grid">
             <span id="printGrado">Grado: </span>
             <span id="printBimestre">Bimestre: </span>
             <span id="printMes">Mes: </span>
-            <span id="printPeriodo">Periodo: </span>
             <span id="printDocente">Docente: </span>
         </div>
     </div>
@@ -318,7 +309,7 @@
         </div>
     </div>
 
-    <!-- Tabla Quincenal Dinámica -->
+    <!-- Tabla Mensual Dinámica -->
     <div class="table-responsive">
         <table id="tablaAsistencia">
             <thead>
@@ -326,7 +317,7 @@
                     <th class="col-num" rowspan="2">N°</th>
                     <th class="col-name" rowspan="2">Estudiantes</th>
                     <th id="thMesAgrupado" colspan="10">MES</th>
-                    <th style="min-width: 65px;" rowspan="2">Total Quincena</th>
+                    <th style="min-width: 65px;" rowspan="2">Total Mes</th>
                 </tr>
                 <tr id="filaCabeceraDias">
                     <!-- Dinámico -->
@@ -403,7 +394,7 @@
 
     const nombresMeses = {
         "3": "Marzo", "4": "Abril", "5": "Mayo", "6": "Junio", "7": "Julio",
-        "8": "Agosto", "9": "Setiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
+        "8": "Agosto", "9": "Septiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
     };
 
     let datosApp = JSON.parse(localStorage.getItem('secundaria_quincenal_db')) || {};
@@ -447,7 +438,7 @@
         renderizarTablaMensual();
     }
 
-    function obtenerDiasHabilesQuincena(mesStr, quincenaNum) {
+    function obtenerDiasHabilesMes(mesStr) {
         const mes = parseInt(mesStr) - 1;
         const anio = new Date().getFullYear();
         const dias = [];
@@ -465,29 +456,24 @@
             }
             date.setDate(date.getDate() + 1);
         }
-
-        const tamQuincena = 10;
-        const inicio = (quincenaNum - 1) * tamQuincena;
-        const fin = inicio + tamQuincena;
-        return dias.slice(inicio, fin);
+        return dias;
     }
 
     function renderizarTablaMensual() {
         inicializarDatosGrado(gradoActual);
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(document.getElementById('selectQuincena').value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         const nombreMesTexto = nombresMeses[mesActual];
 
         const thMesAgrupado = document.getElementById('thMesAgrupado');
         thMesAgrupado.colSpan = diasHabiles.length > 0 ? diasHabiles.length : 1;
-        thMesAgrupado.textContent = `MES DE ${nombreMesTexto.toUpperCase()} - ${document.getElementById('selectQuincena').options[document.getElementById('selectQuincena').selectedIndex].text}`;
+        thMesAgrupado.textContent = `MES DE ${nombreMesTexto.toUpperCase()}`;
 
         const filaCabeceraDias = document.getElementById('filaCabeceraDias');
         let htmlDias = "";
         
         if (diasHabiles.length === 0) {
-            htmlDias = `<th colspan="1" style="color: #64748b;">No hay días hábiles en este periodo</th>`;
+            htmlDias = `<th colspan="1" style="color: #64748b;">No hay días hábiles en este mes</th>`;
         } else {
             diasHabiles.forEach(dia => {
                 htmlDias += `<th style="min-width: 45px;" title="${dia.diaSemana} ${dia.diaNum}">${dia.diaSemana}<br>${dia.diaNum}</th>`;
@@ -538,8 +524,7 @@
         datosApp[gradoActual].asistencias[key] = checkbox.checked;
 
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(document.getElementById('selectQuincena').value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         
         const row = checkbox.closest('tr');
         const checkboxesFila = row.querySelectorAll('input[type="checkbox"]');
@@ -600,14 +585,11 @@
 
     function prepararImpresion() {
         const selectMesText = document.getElementById('selectMes');
-        const selectPeriodoText = document.getElementById('selectQuincena');
         document.getElementById('printGrado').textContent = "Grado: " + gradoActual;
         document.getElementById('printBimestre').textContent = "Bimestre: " + document.getElementById('selectBimestre').value;
         document.getElementById('printMes').textContent = "Mes: " + selectMesText.options[selectMesText.selectedIndex].text;
-        document.getElementById('printPeriodo').textContent = "Periodo: " + selectPeriodoText.options[selectPeriodoText.selectedIndex].text;
         document.getElementById('printDocente').textContent = "Docente: " + (document.getElementById('inputDocente').value || "No especificado");
 
-        // Ocultar temporalmente los ceros solo en la última columna antes de imprimir
         const celdasTotales = document.querySelectorAll('#cuerpoTabla tr td.col-total-fila');
         const valoresOriginales = [];
         
@@ -620,7 +602,6 @@
 
         window.print();
 
-        // Restaurar los valores originales en pantalla inmediatamente después de imprimir
         celdasTotales.forEach((celda, index) => {
             celda.textContent = valoresOriginales[index];
         });
@@ -630,7 +611,7 @@
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `asistencia_secundaria_quincenal_${new Date().toISOString().slice(0,10)}.json`);
+        downloadAnchor.setAttribute("download", `asistencia_secundaria_mensual_${new Date().toISOString().slice(0,10)}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
@@ -658,13 +639,10 @@
         const selectMesEl = document.getElementById('selectMes');
         const nombreMes = selectMesEl.options[selectMesEl.selectedIndex].text;
         const bimestreVal = document.getElementById('selectBimestre').value;
-        const selectPeriodoEl = document.getElementById('selectQuincena');
-        const nombrePeriodo = selectPeriodoEl.options[selectPeriodoEl.selectedIndex].text;
         const docenteVal = document.getElementById('inputDocente').value || "No especificado";
 
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(selectPeriodoEl.value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         const asistenciasGrado = datosApp[gradoActual].asistencias || {};
 
         const borderStyle = {
@@ -710,18 +688,18 @@
             { v: "N°", s: groupHeaderStyle },
             { v: "Estudiantes", s: groupHeaderStyle }
         ];
-        diasHabiles.forEach(() => rowMesHeader.push({ v: `MES DE ${nombreMes.toUpperCase()} - ${nombrePeriodo}`, s: groupHeaderStyle }));
+        diasHabiles.forEach(() => rowMesHeader.push({ v: `MES DE ${nombreMes.toUpperCase()}`, s: groupHeaderStyle }));
         rowMesHeader.push({ v: "Total", s: groupHeaderStyle });
 
         let headerRowDias = ["N°", "Estudiantes"];
         diasHabiles.forEach(d => headerRowDias.push(`${d.diaSemana} ${d.diaNum}`));
-        headerRowDias.push("Total Quincena");
+        headerRowDias.push("Total Mes");
 
         const dataSheet = [
-            [{ v: "REGISTRO QUINCENAL DE ASISTENCIA - SECUNDARIA", s: titleStyle }, ...Array(headerRowDias.length - 1).fill("")],
+            [{ v: "REGISTRO MENSUAL DE ASISTENCIA - SECUNDARIA", s: titleStyle }, ...Array(headerRowDias.length - 1).fill("")],
             [{ v: "Grado:", s: infoStyle }, { v: gradoActual, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [{ v: "Bimestre:", s: infoStyle }, { v: bimestreVal, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
-            [{ v: "Periodo:", s: infoStyle }, `${nombreMes} - ${nombrePeriodo}`, ...Array(headerRowDias.length - 2).fill("")],
+            [{ v: "Mes:", s: infoStyle }, { v: nombreMes, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [{ v: "Docente:", s: infoStyle }, { v: docenteVal, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [],
             rowMesHeader,
@@ -788,8 +766,8 @@
         ws['!merges'] = merges;
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `Asistencia_${nombreMes}_Q${quincenaVal}`);
-        XLSX.writeFile(wb, `Asistencia_${gradoActual.replace(/ /g, "_")}_${nombreMes}_Q${quincenaVal}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, `Asistencia_${nombreMes}`);
+        XLSX.writeFile(wb, `Asistencia_${gradoActual.replace(/ /g, "_")}_${nombreMes}.xlsx`);
     }
 
     cambiarGrado();
