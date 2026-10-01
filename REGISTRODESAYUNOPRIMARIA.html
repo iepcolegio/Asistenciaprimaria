@@ -29,7 +29,7 @@
         }
 
         .container {
-            max-width: 1450px;
+            max-width: 1550px;
             margin: 0 auto;
             background: var(--card-bg);
             padding: 20px;
@@ -115,7 +115,6 @@
         .table-responsive {
             width: 100%;
             overflow-x: auto;
-            max-height: 650px;
         }
 
         table {
@@ -126,9 +125,9 @@
 
         th, td {
             border: 1px solid var(--border-color);
-            padding: 8px 6px;
+            padding: 6px 8px;
             text-align: center;
-            font-size: 13px;
+            font-size: 14px; /* Texto base aumentado para mejor visibilidad */
         }
 
         th {
@@ -143,7 +142,7 @@
         tr.fila-mes-superior th {
             background-color: #c7d2fe;
             color: #1e1b4b;
-            font-size: 13px;
+            font-size: 14px;
             border-bottom: 2px solid #818cf8;
         }
 
@@ -152,24 +151,24 @@
             left: 0;
             background: #ffffff;
             z-index: 5;
-            width: 35px;
-            min-width: 35px;
+            width: 40px;
+            min-width: 40px;
         }
 
         th.col-name, td.col-name {
             position: sticky;
-            left: 36px;
+            left: 41px;
             background: #ffffff;
             z-index: 5;
             text-align: left;
-            min-width: 240px;
-            max-width: 240px;
+            min-width: 280px;
+            max-width: 280px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         th.col-num { z-index: 15; }
-        th.col-name { z-index: 15; left: 35px; }
+        th.col-name { z-index: 15; left: 40px; }
 
         tr:nth-child(even) td:not(.col-num):not(.col-name) {
             background-color: #f8fafc;
@@ -191,8 +190,8 @@
         }
 
         input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             cursor: pointer;
             accent-color: var(--primary-color);
         }
@@ -200,22 +199,27 @@
         .print-header { display: none; }
 
         @media print {
-            body { background: white; padding: 0; }
-            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            @page {
+                size: landscape;
+                margin: 5mm; /* Márgenes mínimos para abarcar todo el largo y ancho de la hoja */
+            }
+            body { background: white; padding: 0; margin: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; width: 100%; }
             .header-panel, .actions-bar { display: none !important; }
+            
             .print-header {
                 display: block !important;
-                margin-bottom: 15px;
+                margin-bottom: 8px;
                 border-bottom: 2px solid #334155;
-                padding-bottom: 8px;
+                padding-bottom: 4px;
             }
             .print-header h3 {
-                margin: 0 0 8px 0;
+                margin: 0 0 4px 0;
                 text-align: center;
                 color: #1e293b;
                 font-size: 16px;
                 background-color: #e0e7ff;
-                padding: 6px;
+                padding: 4px;
                 border-radius: 4px;
                 -webkit-print-color-adjust: exact;
             }
@@ -226,15 +230,30 @@
                 font-weight: bold;
                 color: #1e293b;
                 background: #f1f5f9;
-                padding: 6px 10px;
+                padding: 4px 8px;
                 border-radius: 4px;
                 -webkit-print-color-adjust: exact;
             }
-            th, td { border: 1px solid #000 !important; font-size: 10px; padding: 4px; }
-            th { background-color: #cbd5e1 !important; -webkit-print-color-adjust: exact; }
+            
+            /* Forzar distribución de la tabla a lo alto y ancho total de la hoja */
             .table-responsive { max-height: none; overflow: visible; }
+            table {
+                width: 100% !important;
+                height: 90vh !important; /* Abarca casi toda la altura de la página */
+            }
+            
+            th, td {
+                border: 1px solid #000 !important;
+                font-size: 11px; /* Texto más grande legible al imprimir */
+                padding: 5px 4px; /* Relleno vertical amplio para estirar las filas uniformemente */
+            }
+            
+            th {
+                background-color: #cbd5e1 !important;
+                -webkit-print-color-adjust: exact;
+                font-size: 11px;
+            }
 
-            /* OCULTAR LOS CEROS EN LA ÚLTIMA COLUMNA SOLO AL IMPRIMIR */
             .ocultar-cero-print {
                 color: transparent !important;
             }
@@ -286,26 +305,17 @@
             </select>
         </div>
         <div>
-            <label for="selectQuincena">Periodo (Quincena):</label>
-            <select id="selectQuincena" onchange="renderizarTablaMensual()">
-                <option value="1">1ª Quincena (Sem 1-2)</option>
-                <option value="2">2ª Quincena (Sem 3-4)</option>
-                <option value="3">3ª Quincena / Resto (Sem 5+)</option>
-            </select>
-        </div>
-        <div>
             <label for="inputDocente">Docente Responsable:</label>
             <input type="text" id="inputDocente" placeholder="Escriba el nombre..." oninput="guardarEstadoConfig()">
         </div>
     </div>
 
     <div class="print-header">
-        <h3>REGISTRO QUINCENAL DE ASISTENCIA Y CONTROL - PRIMARIA</h3>
+        <h3>REGISTRO MENSUAL DE ASISTENCIA Y CONTROL - PRIMARIA</h3>
         <div class="print-info-grid">
             <span id="printGrado">Grado: </span>
             <span id="printBimestre">Bimestre: </span>
             <span id="printMes">Mes: </span>
-            <span id="printPeriodo">Periodo: </span>
             <span id="printDocente">Docente: </span>
         </div>
     </div>
@@ -331,7 +341,7 @@
                     <th class="col-num" rowspan="2">N°</th>
                     <th class="col-name" rowspan="2">Estudiantes</th>
                     <th id="thMesAgrupado" colspan="10">MES</th>
-                    <th style="min-width: 65px;" rowspan="2">Total Quincena</th>
+                    <th style="min-width: 65px;" rowspan="2">Total Mes</th>
                 </tr>
                 <tr id="filaCabeceraDias"></tr>
             </thead>
@@ -363,7 +373,7 @@
         "8": "Agosto", "9": "Setiembre", "10": "Octubre", "11": "Noviembre", "12": "Diciembre"
     };
 
-    let datosApp = JSON.parse(localStorage.getItem('primaria_quincenal_db')) || {};
+    let datosApp = JSON.parse(localStorage.getItem('primaria_mensual_db')) || {};
 
     let gradoActual = "1° Grado";
     let mesActual = "3";
@@ -400,7 +410,7 @@
         renderizarTablaMensual();
     }
 
-    function obtenerDiasHabilesQuincena(mesStr, quincenaNum) {
+    function obtenerDiasHabilesMes(mesStr) {
         const mes = parseInt(mesStr) - 1;
         const anio = new Date().getFullYear();
         const dias = [];
@@ -418,32 +428,27 @@
             }
             date.setDate(date.getDate() + 1);
         }
-
-        const tamQuincena = 10;
-        const inicio = (quincenaNum - 1) * tamQuincena;
-        const fin = inicio + tamQuincena;
-        return dias.slice(inicio, fin);
+        return dias;
     }
 
     function renderizarTablaMensual() {
         inicializarDatosGrado(gradoActual);
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(document.getElementById('selectQuincena').value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         const nombreMesTexto = nombresMeses[mesActual];
 
         const thMesAgrupado = document.getElementById('thMesAgrupado');
         thMesAgrupado.colSpan = diasHabiles.length > 0 ? diasHabiles.length : 1;
-        thMesAgrupado.textContent = `MES DE ${nombreMesTexto.toUpperCase()} - ${document.getElementById('selectQuincena').options[document.getElementById('selectQuincena').selectedIndex].text}`;
+        thMesAgrupado.textContent = `MES DE ${nombreMesTexto.toUpperCase()}`;
 
         const filaCabeceraDias = document.getElementById('filaCabeceraDias');
         let htmlDias = "";
         
         if (diasHabiles.length === 0) {
-            htmlDias = `<th colspan="1" style="color: #64748b;">No hay días hábiles en este periodo</th>`;
+            htmlDias = `<th colspan="1" style="color: #64748b;">No hay días hábiles en este mes</th>`;
         } else {
             diasHabiles.forEach(dia => {
-                htmlDias += `<th style="min-width: 45px;" title="${dia.diaSemana} ${dia.diaNum}">${dia.diaSemana}<br>${dia.diaNum}</th>`;
+                htmlDias += `<th style="min-width: 48px;" title="${dia.diaSemana} ${dia.diaNum}">${dia.diaSemana}<br>${dia.diaNum}</th>`;
             });
         }
         filaCabeceraDias.innerHTML = htmlDias;
@@ -474,7 +479,6 @@
                 htmlFila += `<td><input type="checkbox" data-key="${uniqueKey}" ${estaMarcado ? 'checked' : ''} onchange="actualizarCheck(this)"></td>`;
             });
 
-            // Se agrega la clase 'ocultar-cero-print' si el total es 0 para que se oculte solo al imprimir
             const claseCero = totalAlumno === 0 ? 'ocultar-cero-print' : '';
             htmlFila += `<td id="total_row_${index}" class="${claseCero}" style="font-weight: bold; background-color: #f1f5f9;">${totalAlumno}</td>`;
             tr.innerHTML = htmlFila;
@@ -493,8 +497,7 @@
         datosApp[gradoActual].asistencias[key] = checkbox.checked;
 
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(document.getElementById('selectQuincena').value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         
         const row = checkbox.closest('tr');
         const checkboxesFila = row.querySelectorAll('input[type="checkbox"]');
@@ -530,20 +533,20 @@
             htmlTotales += `<td style="font-weight: bold;">${totalDia}</td>`;
         });
 
-        let totalGeneralPeriodo = 0;
+        let totalGeneralMes = 0;
         nombresAlumnos.forEach(nombre => {
             diasHabiles.forEach(dia => {
                 const uniqueKey = `${dia.key}_${nombre}`;
-                if (asistenciasGrado[uniqueKey] === true) totalGeneralPeriodo++;
+                if (asistenciasGrado[uniqueKey] === true) totalGeneralMes++;
             });
         });
-        htmlTotales += `<td style="font-weight: bold; background-color: #cbd5e1;">${totalGeneralPeriodo}</td>`;
+        htmlTotales += `<td style="font-weight: bold; background-color: #cbd5e1;">${totalGeneralMes}</td>`;
 
         filaTotales.innerHTML = htmlTotales;
     }
 
     function guardarAlmacenamientoLocal() {
-        localStorage.setItem('primaria_quincenal_db', JSON.stringify(datosApp));
+        localStorage.setItem('primaria_mensual_db', JSON.stringify(datosApp));
     }
 
     function guardarTodo() {
@@ -553,7 +556,7 @@
 
     function reiniciarDatos() {
         if(confirm("¿Estás seguro de restablecer todos los registros de asistencia?")) {
-            localStorage.removeItem('primaria_quincenal_db');
+            localStorage.removeItem('primaria_mensual_db');
             datosApp = {};
             inicializarDatosGrado(gradoActual);
             renderizarTablaMensual();
@@ -563,11 +566,9 @@
 
     function prepararImpresion() {
         const selectMesText = document.getElementById('selectMes');
-        const selectPeriodoText = document.getElementById('selectQuincena');
         document.getElementById('printGrado').textContent = "Grado: " + gradoActual;
         document.getElementById('printBimestre').textContent = "Bimestre: " + document.getElementById('selectBimestre').value;
         document.getElementById('printMes').textContent = "Mes: " + selectMesText.options[selectMesText.selectedIndex].text;
-        document.getElementById('printPeriodo').textContent = "Periodo: " + selectPeriodoText.options[selectPeriodoText.selectedIndex].text;
         document.getElementById('printDocente').textContent = "Docente: " + (document.getElementById('inputDocente').value || "No especificado");
         window.print();
     }
@@ -576,7 +577,7 @@
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datosApp, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `asistencia_primaria_quincenal_${new Date().toISOString().slice(0,10)}.json`);
+        downloadAnchor.setAttribute("download", `asistencia_primaria_mensual_${new Date().toISOString().slice(0,10)}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
@@ -604,13 +605,10 @@
         const selectMesEl = document.getElementById('selectMes');
         const nombreMes = selectMesEl.options[selectMesEl.selectedIndex].text;
         const bimestreVal = document.getElementById('selectBimestre').value;
-        const selectPeriodoEl = document.getElementById('selectQuincena');
-        const nombrePeriodo = selectPeriodoEl.options[selectPeriodoEl.selectedIndex].text;
         const docenteVal = document.getElementById('inputDocente').value || "No especificado";
 
         const nombresAlumnos = listadoInicialNombres[gradoActual] || [];
-        const quincenaVal = parseInt(selectPeriodoEl.value);
-        const diasHabiles = obtenerDiasHabilesQuincena(mesActual, quincenaVal);
+        const diasHabiles = obtenerDiasHabilesMes(mesActual);
         const asistenciasGrado = datosApp[gradoActual].asistencias || {};
 
         const borderStyle = {
@@ -656,18 +654,18 @@
             { v: "N°", s: groupHeaderStyle },
             { v: "Estudiantes", s: groupHeaderStyle }
         ];
-        diasHabiles.forEach(() => rowMesHeader.push({ v: `MES DE ${nombreMes.toUpperCase()} - ${nombrePeriodo}`, s: groupHeaderStyle }));
+        diasHabiles.forEach(() => rowMesHeader.push({ v: `MES DE ${nombreMes.toUpperCase()}`, s: groupHeaderStyle }));
         rowMesHeader.push({ v: "Total", s: groupHeaderStyle });
 
         let headerRowDias = ["N°", "Estudiantes"];
         diasHabiles.forEach(d => headerRowDias.push(`${d.diaSemana} ${d.diaNum}`));
-        headerRowDias.push("Total Quincena");
+        headerRowDias.push("Total Mes");
 
         const dataSheet = [
-            [{ v: "REGISTRO QUINCENAL DE ASISTENCIA - PRIMARIA", s: titleStyle }, ...Array(headerRowDias.length - 1).fill("")],
+            [{ v: "REGISTRO MENSUAL DE ASISTENCIA - PRIMARIA", s: titleStyle }, ...Array(headerRowDias.length - 1).fill("")],
             [{ v: "Grado:", s: infoStyle }, { v: gradoActual, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [{ v: "Bimestre:", s: infoStyle }, { v: bimestreVal, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
-            [{ v: "Periodo:", s: infoStyle }, `${nombreMes} - ${nombrePeriodo}`, ...Array(headerRowDias.length - 2).fill("")],
+            [{ v: "Mes:", s: infoStyle }, { v: nombreMes, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [{ v: "Docente:", s: infoStyle }, { v: docenteVal, s: infoStyle }, ...Array(headerRowDias.length - 2).fill("")],
             [],
             rowMesHeader,
@@ -675,7 +673,7 @@
         ];
 
         let totalesColumnas = Array(diasHabiles.length).fill(0);
-        let granTotalPeriodo = 0;
+        let granTotalMes = 0;
 
         nombresAlumnos.forEach((nombre, index) => {
             let fila = [
@@ -690,7 +688,7 @@
                 if (marcado) {
                     totalAlumno++;
                     totalesColumnas[dIdx]++;
-                    granTotalPeriodo++;
+                    granTotalMes++;
                 }
                 fila.push({ v: marcado ? "X" : "", s: { ...cellStyle, alignment: { horizontal: "center" } } });
             });
@@ -706,12 +704,12 @@
         totalesColumnas.forEach(tc => {
             filaTotalesExcel.push({ v: tc > 0 ? tc : "", s: { ...headerTableStyle, alignment: { horizontal: "center" } } });
         });
-        filaTotalesExcel.push({ v: granTotalPeriodo > 0 ? granTotalPeriodo : "", s: { ...headerTableStyle, alignment: { horizontal: "center" } } });
+        filaTotalesExcel.push({ v: granTotalMes > 0 ? granTotalMes : "", s: { ...headerTableStyle, alignment: { horizontal: "center" } } });
         dataSheet.push(filaTotalesExcel);
 
         const ws = XLSX.utils.aoa_to_sheet(dataSheet);
 
-        let wscols = [{ wch: 4 }, { wch: 36 }];
+        let wscols = [{ wch: 5 }, { wch: 38 }];
         diasHabiles.forEach(() => wscols.push({ wch: 6 }));
         wscols.push({ wch: 12 });
         ws['!cols'] = wscols;
@@ -734,8 +732,8 @@
         ws['!merges'] = merges;
 
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `Asistencia_${nombreMes}_Q${quincenaVal}`);
-        XLSX.writeFile(wb, `Asistencia_${gradoActual.replace(/ /g, "_")}_${nombreMes}_Q${quincenaVal}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, `Asistencia_${nombreMes}`);
+        XLSX.writeFile(wb, `Asistencia_${gradoActual.replace(/ /g, "_")}_${nombreMes}.xlsx`);
     }
 
     cambiarGrado();
