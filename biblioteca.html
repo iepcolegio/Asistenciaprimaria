@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Biblioteca - I.E.P. 20125 Nuestra Señora del Rosario</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SheetJS (XLSX) con soporte de estilos (xlsx-js-style) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+            .print-table { border-collapse: collapse; width: 100%; font-size: 11pt; }
+            .print-table th, .print-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; }
+            .print-table th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Vista de Impresión -->
+    <div class="print-only p-8">
+        <div class="flex items-center justify-between border-b-2 border-slate-800 pb-4 mb-6">
+            <div class="flex items-center gap-4">
+                <img src="INSIGNIA.jpg" alt="Insignia IEP 20125" class="h-20 w-auto" onerror="this.src='https://via.placeholder.com/80?text=IEP+20125'">
+                <div>
+                    <h1 class="text-2xl font-bold uppercase tracking-wider text-slate-900">I.E.P. N° 20125 Nuestra Señora del Rosario</h1>
+                    <p class="text-sm text-slate-700">Asia - Cañete | Inventario de Biblioteca Escolar 2026</p>
+                </div>
+            </div>
+            <div class="text-right text-xs text-slate-600">
+                <p><strong>Fecha de impresión:</strong> <span id="printDate"></span></p>
+                <p><strong>Total de Registros:</strong> <span id="printTotalCount">0</span> libros</p>
+            </div>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">N°</th>
+                    <th style="width: 48%;">TÍTULO DE OBRA / LIBRO</th>
+                    <th style="width: 12%;">CANTIDAD</th>
+                    <th style="width: 20%;">EDITORIAL</th>
+                    <th style="width: 12%;">PÁGINAS</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody">
+                <!-- Se llena dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Interface Principal Web -->
+    <div class="no-print flex-grow flex flex-col">
+        <!-- Encabezado -->
+        <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-800 text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <img src="INSIGNIA.jpg" alt="Insignia" class="h-16 w-auto drop-shadow-md rounded bg-white p-1" onerror="this.src='https://via.placeholder.com/60?text=20125'">
+                    <div>
+                        <h1 class="text-xl md:text-2xl font-bold tracking-wide">I.E.P. 20125 Nuestra Señora del Rosario</h1>
+                        <p class="text-xs md:text-sm text-blue-200">Sistema de Gestión e Inventario de Biblioteca</p>
+                    </div>
+                </div>
+                
+                <!-- Acciones Principales -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="manualSaveData()" class="bg-violet-600 hover:bg-violet-500 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition" title="Guardar Cambios">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar
+                    </button>
+                    <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition">
+                        <i class="fa-solid fa-plus"></i> Agregar
+                    </button>
+                    <button onclick="deleteSelected()" id="btnDeleteSelected" class="bg-rose-600 hover:bg-rose-500 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fa-solid fa-trash"></i> Eliminar (<span id="selectedCount">0</span>)
+                    </button>
+                    <label class="bg-amber-600 hover:bg-amber-500 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition cursor-pointer">
+                        <i class="fa-solid fa-file-import"></i> Importar
+                        <input type="file" id="importInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="importExcel(event)">
+                    </label>
+                    <button onclick="exportExcel()" class="bg-teal-600 hover:bg-teal-500 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition">
+                        <i class="fa-solid fa-file-excel"></i> Exportar
+                    </button>
+                    <button onclick="printLibrary()" class="bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow transition">
+                        <i class="fa-solid fa-print"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Panel Estadístico -->
+        <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="p-3 bg-blue-100 text-blue-700 rounded-lg">
+                        <i class="fa-solid fa-book text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Obras Registradas</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statTotalBooks">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="p-3 bg-emerald-100 text-emerald-700 rounded-lg">
+                        <i class="fa-solid fa-cubes text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Ejemplares Totales</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statTotalCopies">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="p-3 bg-indigo-100 text-indigo-700 rounded-lg">
+                        <i class="fa-solid fa-building text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Editoriales Únicas</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statEditorials">0</h3>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <div class="p-3 bg-amber-100 text-amber-700 rounded-lg">
+                        <i class="fa-solid fa-file-lines text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Páginas Totales Estimadas</p>
+                        <h3 class="text-2xl font-bold text-slate-800" id="statTotalPages">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros y Búsqueda -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="relative w-full md:w-96">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" oninput="filterBooks()" placeholder="Buscar por título, editorial o N°..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="text-xs text-slate-500 font-medium">
+                    Mostrando <span id="filteredCount">0</span> de <span id="totalRecordsCount">0</span> registros
+                </div>
+            </div>
+
+            <!-- Tabla de Datos -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-700">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                            <tr>
+                                <th class="p-4 w-10 text-center">
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                                </th>
+                                <th class="p-4 w-16">N°</th>
+                                <th class="p-4">Título de Obra / Libro</th>
+                                <th class="p-4 w-28 text-center">Cantidad</th>
+                                <th class="p-4 w-52">Editorial</th>
+                                <th class="p-4 w-28 text-center">Páginas</th>
+                                <th class="p-4 w-24 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="booksTableBody" class="divide-y divide-slate-100">
+                            <!-- Filas insertadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Pie de página -->
+        <footer class="bg-slate-800 text-slate-400 text-xs py-4 text-center mt-auto">
+            I.E.P. N° 20125 Nuestra Señora del Rosario - Asia, Cañete &copy; 2026
+        </footer>
+    </div>
+
+    <!-- Modal Formulario (Agregar / Editar) -->
+    <div id="bookModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-fadeIn">
+            <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2" id="modalTitle">
+                    <i class="fa-solid fa-book-medical text-emerald-400"></i> Agregar Nuevo Libro
+                </h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="bookForm" onsubmit="saveBook(event)" class="p-6 space-y-4">
+                <input type="hidden" id="bookIndex">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">N° de Registro</label>
+                    <input type="number" id="bookNum" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Título de Obra / Libro</label>
+                    <input type="text" id="bookTitle" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cantidad</label>
+                        <input type="number" id="bookQty" min="1" value="1" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Páginas</label>
+                        <input type="text" id="bookPages" placeholder="e.g. 254" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Editorial</label>
+                    <input type="text" id="bookEditorial" placeholder="e.g. SANTILLANA" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium shadow">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script Lógico -->
+    <script>
+        let initialBooks = [
+            {id:1, titulo:"DON QUIJOTE DE LA MANCHA", cantidad:16, editorial:"ALBOR LIBROS", paginas:"657"},
+            {id:2, titulo:"OBRAS COMPLETAS - CESAR VALLEJO/6", cantidad:4, editorial:"BIBLIOTECAS CLASICOS DEL PERU", paginas:"802"},
+            {id:3, titulo:"OBRAS COMPLETAS - JUAN P Y GUZMAN/4", cantidad:2, editorial:"BIBLIOTECAS CLASICOS DEL PERU", paginas:"539"},
+            {id:4, titulo:"OBRAS COMPLETAS- JOSE MARIA AGUREN/7", cantidad:1, editorial:"BIBLIOTECA CLASICOS DEL PERU", paginas:"731"},
+            {id:5, titulo:"POETAS PERUANOSDE ANTOLOGIA", cantidad:2, editorial:"BRUÑO", paginas:"669"},
+            {id:6, titulo:"YO EL SUPREMO - AUGUSTO ROA BASTOS", cantidad:1, editorial:"LA OVEJA NEGRA LTDA", paginas:"405"},
+            {id:7, titulo:"UNE ROSE EN HIVER- KATLEENE WOODIWISS", cantidad:1, editorial:"J AI LU", paginas:"466"},
+            {id:8, titulo:"NAVAJAS EN EL PALADAR - JORGE ESLAVA", cantidad:1, editorial:"ALFAGUARA", paginas:"143"},
+            {id:9, titulo:"ETICA PARA AMADOR-FERNANDA SAVATER", cantidad:1, editorial:"20 ANIVERSARIO", paginas:"145"},
+            {id:10, titulo:"GUSTAD Y VED - CARLOS G. VALLES", cantidad:1, editorial:"SAL TERRAE SANTANDER", paginas:"185"},
+            {id:11, titulo:"EL MENSAJE VIGENTE- GIOVANNI BONFIGLIO", cantidad:7, editorial:"BANCO DE CREDITO DEL PERU", paginas:"293"},
+            {id:12, titulo:"PASALO, MIGUEL- JOSE MANUEL", cantidad:1, editorial:"-", paginas:"204"},
+            {id:13, titulo:"EL VIEJO SAURIO SE RETIRA - MIGUEL GUTIERREZ", cantidad:1, editorial:"ALFAGUARRA", paginas:"247"},
+            {id:14, titulo:"ECONOMIA - ALEJANDRO GARVIE", cantidad:1, editorial:"V&D S.A.C", paginas:"206"},
+            {id:15, titulo:"101 SONETOS", cantidad:1, editorial:"RAFAEL ALBERTI", paginas:"255"},
+            {id:16, titulo:"LA PALABRA DEL MUNDO I - JUIO RAMON", cantidad:1, editorial:"PLANETA MEXICANA", paginas:"545"},
+            {id:17, titulo:"EL REVES DEL AMA - CARLA GUELFENBEIN", cantidad:1, editorial:"ALFAGUARA", paginas:"313"},
+            {id:18, titulo:"LOS RIOS PROFUNDOS - JOSE MARIA ARGUEDA", cantidad:11, editorial:"EDITORIAL SAN MARCOS", paginas:"393"},
+            {id:19, titulo:"POETAS PERUANAS DE ANTOLOGIA - RICARDO GONZALES", cantidad:1, editorial:"BRUÑO", paginas:"669"},
+            {id:20, titulo:"ENSAYOS DE SIMPATIA  CESRR PACHECO VELEZ", cantidad:5, editorial:"-", paginas:"477"},
+            {id:21, titulo:"ROMANCERO GITANO -FEDERICO GARCIA", cantidad:1, editorial:"PLANETA", paginas:"203"},
+            {id:22, titulo:"EL SIGLO DE LAS LUCES  ALEJO CARPENTIER", cantidad:1, editorial:"PLANETA", paginas:"415"},
+            {id:23, titulo:"LOS TRES MOSQUETEROS- ALEJNDRO DUMAS", cantidad:1, editorial:"OVEJA NEGRA", paginas:"635"},
+            {id:24, titulo:"POETAS LATINOAMERICANOS", cantidad:1, editorial:"COEDICION LATINOAMERICANO", paginas:"254"},
+            {id:25, titulo:"TRAGEDIAS - WILLIAM SHAKESPEARE", cantidad:1, editorial:"EPASA CLASICOS", paginas:"1055"},
+            {id:26, titulo:"ANTOLOGIA LITERARIA 1", cantidad:18, editorial:"-", paginas:"168"},
+            {id:27, titulo:"EL NUEVO TESORO DE LA JUVENTUD", cantidad:14, editorial:"CUMBRES S.A.", paginas:"352"},
+            {id:28, titulo:"LA PRINCESA  DE LAS AGUAS Y EL PAISAJE - CARMEN", cantidad:1, editorial:"GENTE NUEVA", paginas:"131"},
+            {id:29, titulo:"LA NIÑA , EL CORAZON Y LA CASA - MARIA TERESA A", cantidad:1, editorial:"GENTE NUEVA", paginas:"52"},
+            {id:30, titulo:"LA PLATERIA EN EL MENSAJE DEL ARTE VIRREINAL", cantidad:1, editorial:"-", paginas:"64"},
+            {id:31, titulo:"AYACUCHO - SAN JUAN DE LA FRONTERA", cantidad:3, editorial:"EDICION BANC DE CREDITO", paginas:"365"},
+            {id:32, titulo:"COMIC AUTORIZADO  NELSON MANDELA", cantidad:6, editorial:"-", paginas:"193"},
+            {id:33, titulo:"POESIA PERUANA", cantidad:3, editorial:"-", paginas:"-"},
+            {id:34, titulo:"ANTONIO RAIMONDI", cantidad:3, editorial:"-", paginas:"-"},
+            {id:35, titulo:"GRANDES BIOGRAFIAS  NASSER LA WRENCE", cantidad:1, editorial:"-", paginas:"520"},
+            {id:36, titulo:"HISTORIA GENEAL DEL PERU - RUBEN VARGAS", cantidad:10, editorial:"-", paginas:"339"},
+            {id:37, titulo:"QEROOS - ARE INKA", cantidad:5, editorial:"-", paginas:"355"},
+            {id:38, titulo:"LOS INCAS - ARTES Y SIMBOLOS", cantidad:5, editorial:"-", paginas:"327"},
+            {id:39, titulo:"TEATRO COMPLETO  WILLIAM SHKESPEARE", cantidad:1, editorial:"EL ATENEO", paginas:"947"},
+            {id:40, titulo:"LA DIVINA COMEDIA Y LA VIUDA NUEVA", cantidad:1, editorial:"EL ATENEO", paginas:"670"},
+            {id:41, titulo:"GRANDES BIOGRAFIAS  HETHER ROMAN", cantidad:1, editorial:"-", paginas:"417"},
+            {id:42, titulo:"GRANDES BIOGRFIAS - CHURCHILL", cantidad:1, editorial:"-", paginas:"445"},
+            {id:43, titulo:"GRANDES BIOGRAFIAS - LENIN MARIA ANTONIETA", cantidad:1, editorial:"-", paginas:"471"},
+            {id:44, titulo:"GRANDES BIOGRAFIAS - GANDHI VERDI", cantidad:1, editorial:"-", paginas:"439"},
+            {id:45, titulo:"NUEVA ENCICLOPEDIA TEMATICA", cantidad:11, editorial:"RICHARDS S.A", paginas:"631"},
+            {id:46, titulo:"GENIOS GOYA NAPOLEON", cantidad:1, editorial:"RAMON SOPENA", paginas:"709"},
+            {id:47, titulo:"CODIGO PROCESAL PENAL", cantidad:6, editorial:"-", paginas:"438"},
+            {id:48, titulo:"ANTOLOGIA LENGUA CASTELLANA Y LITERATURA 3SEC", cantidad:1, editorial:"OXFORD EDUCACION", paginas:"142"},
+            {id:49, titulo:"LENGUA CASTELLANA Y LITERATURA 1° SEC", cantidad:1, editorial:"BRUÑO", paginas:"255"},
+            {id:50, titulo:"GLOSA LENGUA Y LITERATURA 2° SEC", cantidad:1, editorial:"VICENS  VIVES", paginas:"293"},
+            {id:51, titulo:"RESOLVEMOS 1° SEC", cantidad:1, editorial:"-", paginas:"126"},
+            {id:52, titulo:"ANTOLOGIA LITERARIA 5° SEC", cantidad:1, editorial:"AMAUTA IMPRESIONES S.A.C", paginas:"168"},
+            {id:53, titulo:"COMPRENSION LECTORA 2°SEC", cantidad:1, editorial:"-", paginas:"231"},
+            {id:54, titulo:"COMUNICACIÓN 1° SEC", cantidad:1, editorial:"SANTILLANA", paginas:"246"},
+            {id:55, titulo:"MODULO COMPRENSION LECTORA 1° SEC", cantidad:8, editorial:"COORPORACION NAVARRETE S.A", paginas:"199"},
+            {id:56, titulo:"CUADERNO DE TRABAJO - COMUNICACIÓN 1° SEC", cantidad:5, editorial:"-", paginas:"175"},
+            {id:57, titulo:"COMPRENSION LECTORA 4°SEC", cantidad:2, editorial:"-", paginas:"229"},
+            {id:58, titulo:"MODULO COMPRENSION LECTORA 4° SEC", cantidad:8, editorial:"-", paginas:"168"},
+            {id:59, titulo:"HISTORIA GENEAL DEL PERU - V", cantidad:8, editorial:"-", paginas:"670"},
+            {id:60, titulo:"HISTORIA UNIVERSAL SALVAT", cantidad:29, editorial:"SALVAT EDITORES S.A", paginas:"-"},
+            {id:61, titulo:"GEOGRAFIAUNIVERSAL", cantidad:20, editorial:"NAUTA", paginas:"118"},
+            {id:62, titulo:"HISTORIA UNIVERSL", cantidad:13, editorial:"SALVAT EDITORES S.A", paginas:"424"},
+            {id:63, titulo:"COLOMBIA ENCUESTADA - NAPOLEON FRANCO", cantidad:18, editorial:"-", paginas:"290"},
+            {id:64, titulo:"UNA VERDAD INCOMODA AL GORE", cantidad:3, editorial:"GEDISA", paginas:"325"},
+            {id:65, titulo:"HISTORIA UNIVERSAL", cantidad:1, editorial:"-", paginas:"845-1268"},
+            {id:66, titulo:"HISTORIA DEL ARTE I-II ELIE FAURE", cantidad:2, editorial:"-", paginas:"547"},
+            {id:67, titulo:"COMON FINANCIA EL CRECIMIENTO - ALEJANDRO TOLED", cantidad:1, editorial:"UNIVERSO S.A", paginas:"653"},
+            {id:68, titulo:"LA HUMANIDAD A TRAVES DE LOS TIEMPOS", cantidad:4, editorial:"MARIN S.A", paginas:"452"},
+            {id:69, titulo:"ENSEÑANZA DE LOS DERECHOS HUMANOS", cantidad:1, editorial:"-", paginas:"163"},
+            {id:70, titulo:"HISTORIA NAVAL DEL PERU", cantidad:1, editorial:"-", paginas:"340"},
+            {id:71, titulo:"PROMOVIENDO LA PARTICIPACION CIUDADANA", cantidad:1, editorial:"-", paginas:"176"},
+            {id:72, titulo:"PROYET 1992", cantidad:1, editorial:"-", paginas:"120"},
+            {id:73, titulo:"ENFOQUE 3° SEC", cantidad:3, editorial:"NORMA", paginas:"254"},
+            {id:74, titulo:"LA HISTORIA DE IBEROAMERICA 4°", cantidad:4, editorial:"-", paginas:"336"},
+            {id:75, titulo:"ECONOMIA PARA TODOS", cantidad:1, editorial:"QUAD GRAPHCS PERU S.A", paginas:"190"},
+            {id:76, titulo:"PERU THETHERD MILENNIUM", cantidad:2, editorial:"-", paginas:"337"},
+            {id:77, titulo:"PERU PROMESA", cantidad:1, editorial:"-", paginas:"354"},
+            {id:78, titulo:"HISTORIA DE LOS HOMBRES ", cantidad:1, editorial:"ATENEO", paginas:"63"},
+            {id:79, titulo:"LADIS Y EL F.B.I", cantidad:1, editorial:"-", paginas:"40"},
+            {id:80, titulo:"MI PRIMERA VUELTA AL MUNDO", cantidad:1, editorial:"EL ATENEO", paginas:"68"},
+            {id:81, titulo:"ATLAS HISTORICOS - JOAN ROIG", cantidad:2, editorial:"-", paginas:"312"},
+            {id:82, titulo:"ATLAS NATIONAL GEOGRAPHIC", cantidad:4, editorial:"-", paginas:"111"},
+            {id:83, titulo:"HISTORIA DE LOS EXPLORADORES", cantidad:2, editorial:"EL ATENEO", paginas:"64"},
+            {id:84, titulo:"HISTORIA UNIVERSAL", cantidad:1, editorial:"-", paginas:"844"},
+            {id:85, titulo:"EN EL UMBRAL DEL MILENIO ", cantidad:1, editorial:"-", paginas:"376"},
+            {id:86, titulo:"PERU", cantidad:1, editorial:"-", paginas:"211"},
+            {id:87, titulo:"HISTORIA DE LA REPUBLICA DEL PERU - JORGE BASADRE", cantidad:17, editorial:"EL COMERCIO", paginas:"300"},
+            {id:88, titulo:"100 AÑOS DE SOLEDAD FELARMONICA DE LIMA", cantidad:4, editorial:"EL COMERCIO", paginas:"199"},
+            {id:89, titulo:"FEMIRAMA ENCICLOPODEIA FEMENINA", cantidad:1, editorial:"-", paginas:"192"},
+            {id:90, titulo:"LA ENCICLOPEDIA", cantidad:2, editorial:"-", paginas:"873"},
+            {id:91, titulo:"ENCICLOPEDIA UNIVERSAL", cantidad:1, editorial:"-", paginas:"472"},
+            {id:92, titulo:"DICCIONARIO PREHISPANICO DE DUDAS", cantidad:4, editorial:"-", paginas:"833"},
+            {id:93, titulo:"PERU 10 MIL AÑOS DE DOMESTICACION", cantidad:1, editorial:"BRUÑO", paginas:"160"},
+            {id:94, titulo:"ENGLISH WORKBOOK 5° SEC3", cantidad:3, editorial:"SANTILLANA", paginas:"47"},
+            {id:95, titulo:"ENGLISH STUDENTS BOOK 3°SEC", cantidad:1, editorial:"-", paginas:"142"},
+            {id:96, titulo:"ENGLISH SECORNDARY 5° SEC", cantidad:1, editorial:"SANTILLANA", paginas:"78"},
+            {id:97, titulo:"EENAGERS NEW GENERATION", cantidad:1, editorial:"NORMA", paginas:"64"},
+            {id:98, titulo:"ENGLISH 1°  WOKBOOK", cantidad:1, editorial:"NORMA", paginas:"48"},
+            {id:99, titulo:"WAY AHEAD", cantidad:1, editorial:"-", paginas:"119"},
+            {id:100, titulo:"PRETTY KITON 3° SEC ", cantidad:1, editorial:"-", paginas:"175"},
+            {id:101, titulo:"THE HEINLE PICTURE DICTIONARY", cantidad:4, editorial:"-", paginas:"262"},
+            {id:102, titulo:"TOUCHTONE FULL CONTACT 3° SEC", cantidad:1, editorial:"-", paginas:"48"},
+            {id:103, titulo:"TOUCHTONE FULL CONTACT 4°SEC", cantidad:1, editorial:"-", paginas:"48"},
+            {id:104, titulo:"PERU AN ECONOMY FOR THE 21CENTURY", cantidad:4, editorial:"-", paginas:"211"},
+            {id:105, titulo:"FAST & EASY ", cantidad:5, editorial:"-", paginas:"-"},
+            {id:106, titulo:"MON BEAU CAPITAINE", cantidad:1, editorial:"JAILU", paginas:"183"},
+            {id:107, titulo:"LA SPLENDUES DES WAINWRIGHT", cantidad:1, editorial:"JAILU", paginas:"222"},
+            {id:108, titulo:"ON A TUE PENDANT LESCALE", cantidad:1, editorial:"JAILU", paginas:"216"},
+            {id:109, titulo:"DICCIONARIO- ESPAÑOL -INGLES ", cantidad:11, editorial:"-", paginas:"188"},
+            {id:110, titulo:"LESPACE DUNE VIE", cantidad:1, editorial:"-", paginas:"347"},
+            {id:111, titulo:"ON BECOMING A PERSON", cantidad:1, editorial:"-", paginas:"420"},
+            {id:112, titulo:"MINILAROUSSE ILUSTRADO ", cantidad:3, editorial:"-", paginas:"552"},
+            {id:113, titulo:"PETITT LAROUSSE - ILUSTRE", cantidad:1, editorial:"-", paginas:"782"},
+            {id:114, titulo:"MENILAROUSSE ILUSTRADO5", cantidad:2, editorial:"-", paginas:"924"},
+            {id:115, titulo:"LE MASQUE DE LENCHANTERESSE", cantidad:1, editorial:"-", paginas:"349"},
+            {id:116, titulo:"MATEMATICA 2° SEC", cantidad:1, editorial:"NORMA", paginas:"254"},
+            {id:117, titulo:"MATEMATICA 3° SEC", cantidad:5, editorial:"NORMA", paginas:"254"},
+            {id:118, titulo:"MATEMATICA NUMEROS ", cantidad:1, editorial:"-", paginas:"252"},
+            {id:119, titulo:"MATEMATICA 4° SEC", cantidad:1, editorial:"-", paginas:"288"},
+            {id:120, titulo:"FRACTAL MATEMTICA", cantidad:2, editorial:"-", paginas:"266"},
+            {id:121, titulo:"HIDROMETALURGIA ", cantidad:1, editorial:"-", paginas:"947"},
+            {id:122, titulo:"EVALUAR EN EDUCACION FISICA", cantidad:1, editorial:"-", paginas:"321"},
+            {id:123, titulo:"DEL CIELO Y LA TIERRA", cantidad:4, editorial:"-", paginas:"199"},
+            {id:124, titulo:"FIESTAS Y COSTUMBRES PERUANAS", cantidad:3, editorial:"-", paginas:"165"},
+            {id:125, titulo:"LA BIBLIA DE LAS CIENCIAS NATURALES", cantidad:2, editorial:"LEXUS", paginas:"1008"},
+            {id:126, titulo:"CIENCIAS AMBIENTALES- ECOLOGIA Y DESARROLLO", cantidad:1, editorial:"-", paginas:"698"},
+            {id:127, titulo:"CIENCIA TECNOLOGIA Y AMBIENTE - BIOSFERA", cantidad:4, editorial:"-", paginas:"242"},
+            {id:128, titulo:"CIENCIAS PARA EL MUNDO 1° ", cantidad:2, editorial:"-", paginas:"190"},
+            {id:129, titulo:"LOMAS DE ASIA - IVAN REYNA", cantidad:1, editorial:"-", paginas:"147"},
+            {id:130, titulo:"NAVEGANDO POR LAS ESTRELLAS - RUBEN CEDEÑO ", cantidad:1, editorial:"-", paginas:"161"},
+            {id:131, titulo:"CAMBIO DE PIEL - CARLOS FUENTES", cantidad:1, editorial:"-", paginas:"299"},
+            {id:132, titulo:"COMPRENDER EL ARTE ", cantidad:1, editorial:"-", paginas:"191"},
+            {id:133, titulo:"EDUARD ARROLLO", cantidad:1, editorial:"-", paginas:"295"},
+            {id:134, titulo:"PLASTICA 5 PRIMARIA", cantidad:1, editorial:"-", paginas:"40"},
+            {id:135, titulo:"ERASE UNA VEZ EL HOMBRE", cantidad:3, editorial:"-", paginas:"52"}
+        ];
+
+        let books = JSON.parse(localStorage.getItem('iep20125_library_db')) || initialBooks;
+        let selectedIndexes = new Set();
+
+        function saveToStorage() {
+            localStorage.setItem('iep20125_library_db', JSON.stringify(books));
+            renderTable();
+        }
+
+        function manualSaveData() {
+            localStorage.setItem('iep20125_library_db', JSON.stringify(books));
+            alert("¡Cambios guardados correctamente en la base de datos local!");
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('booksTableBody');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+            tbody.innerHTML = '';
+
+            let filtered = books.filter(b => 
+                b.id.toString().includes(searchVal) ||
+                b.titulo.toLowerCase().includes(searchVal) ||
+                b.editorial.toLowerCase().includes(searchVal)
+            );
+
+            filtered.forEach((book) => {
+                const realIndex = books.indexOf(book);
+                const isChecked = selectedIndexes.has(realIndex);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-4 text-center">
+                        <input type="checkbox" onchange="toggleSelect(${realIndex})" ${isChecked ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                    </td>
+                    <td class="p-4 font-semibold text-slate-500">${book.id}</td>
+                    <td class="p-4 font-medium text-slate-800">${book.titulo}</td>
+                    <td class="p-4 text-center font-bold text-blue-700 bg-blue-50/50 rounded">${book.cantidad}</td>
+                    <td class="p-4 text-slate-600">${book.editorial}</td>
+                    <td class="p-4 text-center text-slate-500">${book.paginas}</td>
+                    <td class="p-4 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="editBook(${realIndex})" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteSingleBook(${realIndex})" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('filteredCount').innerText = filtered.length;
+            document.getElementById('totalRecordsCount').innerText = books.length;
+            document.getElementById('selectedCount').innerText = selectedIndexes.size;
+            document.getElementById('btnDeleteSelected').disabled = selectedIndexes.size === 0;
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('statTotalBooks').innerText = books.length;
+            const totalCopies = books.reduce((acc, b) => acc + (parseInt(b.cantidad) || 0), 0);
+            document.getElementById('statTotalCopies').innerText = totalCopies;
+            const editorials = new Set(books.map(b => b.editorial.trim().toUpperCase()).filter(e => e && e !== '-'));
+            document.getElementById('statEditorials').innerText = editorials.size;
+            const totalPages = books.reduce((acc, b) => {
+                let p = parseInt(b.paginas);
+                return acc + (isNaN(p) ? 0 : p * (parseInt(b.cantidad) || 1));
+            }, 0);
+            document.getElementById('statTotalPages').innerText = totalPages.toLocaleString();
+        }
+
+        function filterBooks() { renderTable(); }
+
+        function toggleSelect(index) {
+            if (selectedIndexes.has(index)) selectedIndexes.delete(index);
+            else selectedIndexes.add(index);
+            renderTable();
+        }
+
+        function toggleSelectAll(checkbox) {
+            if (checkbox.checked) books.forEach((_, idx) => selectedIndexes.add(idx));
+            else selectedIndexes.clear();
+            renderTable();
+        }
+
+        function openModal(isEdit = false) {
+            document.getElementById('bookModal').classList.remove('hidden');
+            document.getElementById('bookModal').classList.add('flex');
+            if (!isEdit) {
+                document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-book-medical text-emerald-400"></i> Agregar Nuevo Libro`;
+                document.getElementById('bookForm').reset();
+                document.getElementById('bookIndex').value = '';
+                document.getElementById('bookNum').value = books.length > 0 ? Math.max(...books.map(b => b.id)) + 1 : 1;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('bookModal').classList.add('hidden');
+            document.getElementById('bookModal').classList.remove('flex');
+        }
+
+        function editBook(index) {
+            const b = books[index];
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-blue-400"></i> Editar Libro N° ${b.id}`;
+            document.getElementById('bookIndex').value = index;
+            document.getElementById('bookNum').value = b.id;
+            document.getElementById('bookTitle').value = b.titulo;
+            document.getElementById('bookQty').value = b.cantidad;
+            document.getElementById('bookPages').value = b.paginas;
+            document.getElementById('bookEditorial').value = b.editorial;
+            openModal(true);
+        }
+
+        function saveBook(e) {
+            e.preventDefault();
+            const index = document.getElementById('bookIndex').value;
+            const newBook = {
+                id: parseInt(document.getElementById('bookNum').value),
+                titulo: document.getElementById('bookTitle').value.trim(),
+                cantidad: parseInt(document.getElementById('bookQty').value) || 1,
+                editorial: document.getElementById('bookEditorial').value.trim() || '-',
+                paginas: document.getElementById('bookPages').value.trim() || '-'
+            };
+            if (index === '') books.push(newBook);
+            else books[parseInt(index)] = newBook;
+            closeModal();
+            saveToStorage();
+        }
+
+        function deleteSingleBook(index) {
+            if (confirm(`¿Está seguro de eliminar el libro "${books[index].titulo}"?`)) {
+                books.splice(index, 1);
+                selectedIndexes.clear();
+                saveToStorage();
+            }
+        }
+
+        function deleteSelected() {
+            if (confirm(`¿Está seguro de eliminar los ${selectedIndexes.size} libros seleccionados?`)) {
+                books = books.filter((_, idx) => !selectedIndexes.has(idx));
+                selectedIndexes.clear();
+                document.getElementById('selectAll').checked = false;
+                saveToStorage();
+            }
+        }
+
+        function exportExcel() {
+            const dataToExport = books.map(b => ({
+                'N°': b.id,
+                'TITULO DE OBRA / LIBRO': b.titulo,
+                'CANTIDAD': b.cantidad,
+                'EDITORIAL': b.editorial,
+                'PAGINAS': b.paginas
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+            ws['!cols'] = [
+                { wch: 5 },   // Columna A (N°)
+                { wch: 50 },  // Columna B (TITULO DE OBRA / LIBRO)
+                { wch: 9 },   // Columna C (CANTIDAD)
+                { wch: 30 },  // Columna D (EDITORIAL)
+                { wch: 10 }   // Columna E (PAGINAS)
+            ];
+
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            
+            const borderStyle = {
+                top: { style: "thin", color: { rgb: "CCCCCC" } },
+                bottom: { style: "thin", color: { rgb: "CCCCCC" } },
+                left: { style: "thin", color: { rgb: "CCCCCC" } },
+                right: { style: "thin", color: { rgb: "CCCCCC" } }
+            };
+
+            const headerStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Calibri", sz: 11 },
+                fill: { fgColor: { rgb: "1E3A8A" } },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderStyle
+            };
+
+            const firstColStyle = {
+                font: { bold: true, color: { rgb: "FFFFFF" }, name: "Calibri", sz: 11 },
+                fill: { fgColor: { rgb: "1E3A8A" } },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: borderStyle
+            };
+
+            const bodyStyle = {
+                font: { name: "Calibri", sz: 11, color: { rgb: "000000" } },
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: borderStyle
+            };
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cell_address]) continue;
+
+                    if (R === 0) {
+                        ws[cell_address].s = headerStyle;
+                    } else if (C === 0) {
+                        ws[cell_address].s = firstColStyle;
+                    } else {
+                        ws[cell_address].s = bodyStyle;
+                    }
+                }
+            }
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Biblioteca");
+            XLSX.writeFile(wb, "BIBLIOTECA_2026_IEP20125.xlsx");
+        }
+
+        function importExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.SheetNames[0];
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+
+                    if (rows.length === 0) {
+                        alert("El archivo subido está vacío.");
+                        return;
+                    }
+
+                    const importedBooks = rows.map((r, i) => ({
+                        id: parseInt(r['N°'] || r['N° '] || r['NO'] || (i + 1)),
+                        titulo: r['TITULO DE OBRA / LIBRO'] || r['TITULO'] || r['LIBRO'] || 'SIN TITULO',
+                        cantidad: parseInt(r['CANTIDAD'] || 1),
+                        editorial: r['EDITORIAL'] || '-',
+                        paginas: r['PAGINAS'] || '-'
+                    }));
+
+                    if (confirm(`Se encontraron ${importedBooks.length} libros. ¿Desea reemplazar la base de datos actual?`)) {
+                        books = importedBooks;
+                        selectedIndexes.clear();
+                        saveToStorage();
+                    }
+                } catch (err) {
+                    alert("Error al leer el archivo Excel.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function printLibrary() {
+            const printTbody = document.getElementById('printTableBody');
+            printTbody.innerHTML = '';
+            document.getElementById('printDate').innerText = new Date().toLocaleDateString('es-PE');
+            document.getElementById('printTotalCount').innerText = books.length;
+
+            books.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align:center;">${b.id}</td>
+                    <td>${b.titulo}</td>
+                    <td style="text-align:center;">${b.cantidad}</td>
+                    <td>${b.editorial}</td>
+                    <td style="text-align:center;">${b.paginas}</td>
+                `;
+                printTbody.appendChild(tr);
+            });
+
+            window.print();
+        }
+
+        document.addEventListener('DOMContentLoaded', renderTable);
+    </script>
+</body>
+</html>
