@@ -31,12 +31,26 @@
             overflow-y: auto; /* Permite desplazamiento si hay muchos botones */
         }
 
-        .sidebar h2 {
-            font-size: 1.1rem;
-            text-align: center;
+        /* Contenedor del logo y título en el encabezado */
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .sidebar-header img {
+            width: 45px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .sidebar h2 {
+            font-size: 0.95rem;
             color: #1abc9c;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
         }
 
         /* Estilos compartidos para botones y enlaces del menú */
@@ -102,7 +116,7 @@
         }
 
         .dropdown.open .dropdown-content {
-            max-height: 500px; /* Suficiente altura para mostrar los subelementos */
+            max-height: 500px;
             transition: max-height 0.3s ease-in;
             margin-top: 5px;
             margin-bottom: 5px;
@@ -153,7 +167,10 @@
 
     <!-- Barra Lateral -->
     <nav class="sidebar">
-        <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
+        <div class="sidebar-header">
+            <img src="INSIGNIA.jpg" alt="Insignia IEP 20125">
+            <h2>IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h2>
+        </div>
         
         <!-- DESPLEGABLE: ASISTENCIA -->
         <div class="dropdown">
