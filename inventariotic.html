@@ -71,8 +71,12 @@
         <header class="bg-gradient-to-r from-pink-800 via-rose-800 to-purple-900 text-white shadow-lg">
             <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center space-x-4">
-                    <div class="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-3xl shadow border border-white/20">
-                        <i class="fa-solid fa-school text-pink-200"></i>
+                    <!-- INSIGNIA CONTAINER WITH FALLBACK -->
+                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow border border-white/20 overflow-hidden relative">
+                        <img src="insignia.PNG" alt="Insignia IEP" class="w-full h-full object-contain p-1" onerror="this.onerror=null; this.style.display='none'; document.getElementById('fallbackIcon').style.display='flex';">
+                        <div id="fallbackIcon" class="absolute inset-0 items-center justify-center text-3xl text-pink-200 hidden">
+                            <i class="fa-solid fa-school"></i>
+                        </div>
                     </div>
                     <div>
                         <span class="text-xs uppercase tracking-widest text-pink-300 font-semibold">Institución Educativa Pública</span>
