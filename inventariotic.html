@@ -3,956 +3,813 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario 2026 - IEP 20125 Nuestra Señora del Rosario</title>
+    <title>Inventario 2026 - Equipos Tecnológicos Nivel Secundario</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
+    <!-- SheetJS (xlsx-js-style) CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <!-- FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (Standard CDN for Reading and Writing Excel Files) -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        rosario: { 50: '#fdf2f8', 100: '#fce7f3', 600: '#db2777', 700: '#be185d', 800: '#9d174d', 900: '#831843' }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         @media print {
-            body * { visibility: hidden; }
-            #sectionTabla1, #sectionTabla1 *, #sectionTabla2, #sectionTabla2 * { visibility: visible; }
-            #sectionTabla1 { position: absolute; left: 0; top: 0; width: 100%; }
-            #sectionTabla2 { position: absolute; left: 0; top: 0; width: 100%; }
             .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 10px !important; }
+            th, td { border: 1px solid #cbd5e1 !important; padding: 4px !important; color: black !important; }
+            #printableActa { border: none !important; padding: 0 !important; }
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen text-slate-800">
 
-    <!-- INPUT OCULTO PARA IMPORTAR EXCEL -->
-    <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" class="hidden" onchange="procesarArchivoExcel(event)">
-
-    <!-- PASSWORD MODAL FOR SECURE ACTIONS (ADD/DELETE/IMPORT/CLEAR) -->
-    <div id="passwordModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-100 transform transition-all">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 text-pink-600 text-2xl shadow-inner">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <h2 id="pwdModalTitle" class="text-2xl font-bold text-gray-900">Acceso Protegido</h2>
-                <p id="pwdModalSub" class="text-sm text-gray-500 mt-1">Ingrese contraseña admin2026 para realizar esta acción</p>
+    <!-- Header institucional -->
+    <header class="bg-indigo-900 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 py-5 flex flex-col md:flex-row justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold uppercase tracking-wider"><i class="fa-solid fa-laptop-code mr-2"></i> Inventario 2026</h1>
+                <p class="text-indigo-200 text-sm mt-1">Equipos Tecnológicos y Mobiliario - Nivel Secundario</p>
             </div>
-            <form id="passwordForm" onsubmit="handlePasswordSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Contraseña</label>
-                    <input type="password" id="securePasswordInput" required placeholder="Ingrese contraseña (admin2026)" 
-                        class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm transition">
-                    <p class="text-xs text-gray-400 mt-1.5">Contraseña requerida: <span class="font-mono font-medium text-pink-600">admin2026</span></p>
-                </div>
-                <div id="pwdError" class="hidden text-red-500 text-xs font-medium text-center bg-red-50 py-2 rounded-lg">
-                    Contraseña incorrecta. Intente nuevamente.
-                </div>
-                <div class="flex space-x-3">
-                    <button type="button" onclick="closePasswordModal()" class="w-1/2 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition">Cancelar</button>
-                    <button type="submit" class="w-1/2 py-3 bg-pink-600 text-white font-semibold rounded-xl hover:bg-pink-700 transition shadow">Confirmar</button>
-                </div>
-            </form>
+            <div class="mt-4 md:mt-0 flex flex-wrap gap-2">
+                <button onclick="manualSave()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Guardar
+                </button>
+                <button onclick="openModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-solid fa-plus mr-1.5"></i> Agregar
+                </button>
+                <button onclick="openBajaModal()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-solid fa-file-circle-xmark mr-1.5"></i> Dar de Baja
+                </button>
+                <label class="bg-indigo-700 hover:bg-indigo-800 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow cursor-pointer">
+                    <i class="fa-solid fa-file-excel mr-1.5"></i> Importar Excel
+                    <input type="file" id="excelFile" accept=".xlsx, .xls" class="hidden" onchange="importExcel(event)">
+                </label>
+                <button onclick="exportExcel()" class="bg-green-700 hover:bg-green-800 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-solid fa-file-arrow-down mr-1.5"></i> Exportar Excel
+                </button>
+                <button onclick="window.print()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-solid fa-print mr-1.5"></i> Imprimir
+                </button>
+                <button onclick="uploadToDrive()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition flex items-center shadow">
+                    <i class="fa-brands fa-google-drive mr-1.5"></i> Subir al Drive
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navegación por pestañas -->
+    <div class="bg-white border-b border-slate-200 no-print">
+        <div class="max-w-7xl mx-auto px-4 flex gap-6 text-sm font-semibold">
+            <button id="tabActiveBtn" onclick="switchTab('active')" class="py-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center">
+                <i class="fa-solid fa-boxes-stacked mr-2"></i> Equipos Activos (<span id="countActiveTab">0</span>)
+            </button>
+            <button id="tabBajaBtn" onclick="switchTab('baja')" class="py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center">
+                <i class="fa-solid fa-ban mr-2"></i> Equipos Dadas de Baja (<span id="countBajaTab">0</span>)
+            </button>
         </div>
     </div>
 
-    <!-- MAIN APP CONTAINER -->
-    <div id="appContainer" class="flex-1 flex flex-col">
+    <!-- Contenido Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
         
-        <!-- HEADER -->
-        <header class="bg-gradient-to-r from-pink-800 via-rose-800 to-purple-900 text-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center space-x-4">
-                    <!-- INSIGNIA CONTAINER WITH FALLBACK -->
-                    <div class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center shadow border border-white/20 overflow-hidden relative">
-                        <img src="insignia.PNG" alt="Insignia IEP" class="w-full h-full object-contain p-1" onerror="this.onerror=null; this.style.display='none'; document.getElementById('fallbackIcon').style.display='flex';">
-                        <div id="fallbackIcon" class="absolute inset-0 items-center justify-center text-3xl text-pink-200 hidden">
-                            <i class="fa-solid fa-school"></i>
-                        </div>
-                    </div>
+        <!-- Pestaña 1: Equipos Activos -->
+        <div id="viewActive">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6 no-print">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
                     <div>
-                        <span class="text-xs uppercase tracking-widest text-pink-300 font-semibold">Institución Educativa Pública</span>
-                        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">IEP 20125 "Nuestra Señora del Rosario"</h1>
-                        <p class="text-sm text-pink-100 opacity-90">Sistema de Control de Inventario Tecnológico 2026</p>
+                        <span class="text-xs font-semibold text-slate-400 uppercase">Total Activos</span>
+                        <h2 id="totalCount" class="text-3xl font-extrabold text-indigo-900">0</h2>
                     </div>
-                </div>
-
-                <!-- CONTROLES SUPERIORES: MES, AÑO, PERSONAL -->
-                <div class="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 flex flex-wrap items-center gap-4 text-sm shadow-inner">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-pink-200 font-medium"><i class="fa-regular fa-calendar-days mr-1"></i> Mes/Año:</span>
-                        <input type="text" id="headerMesAnio" value="OCTUBRE 2026" class="bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-white font-semibold w-36 text-center focus:outline-none focus:ring-2 focus:ring-pink-300">
+                    <div class="md:col-span-2 relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-search"></i>
+                        </span>
+                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por código, equipo, marca, modelo, serie..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-pink-200 font-medium"><i class="fa-solid fa-user-tie mr-1"></i> Resp. CIST:</span>
-                        <input type="text" id="headerPersonal" value="Prof. Responsable CIST" class="bg-white/20 border border-white/30 rounded-lg px-3 py-1.5 text-white font-semibold w-48 text-center focus:outline-none focus:ring-2 focus:ring-pink-300">
-                    </div>
-                    <button onclick="guardarCabecera()" class="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1.5 rounded-lg font-medium transition shadow text-xs">
-                        <i class="fa-solid fa-floppy-disk mr-1"></i> Fijar Datos
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- NAVIGATION & TOOLBAR -->
-        <nav class="bg-white border-b border-gray-200 shadow-sm no-print">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex space-x-2">
-                    <button onclick="switchTab('tabla1')" id="btnTab1" class="px-4 py-2 rounded-xl font-semibold text-sm transition bg-pink-600 text-white shadow">
-                        <i class="fa-solid fa-laptop mr-2"></i> Equipos Principales (Laptops/Proyectores/Teclados)
-                    </button>
-                    <button onclick="switchTab('tabla2')" id="btnTab2" class="px-4 py-2 rounded-xl font-semibold text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200">
-                        <i class="fa-solid fa-boxes-stacked mr-2"></i> Accesorios y Mobiliario
-                    </button>
-                </div>
-
-                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-                    <button onclick="requestAddAction()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center">
-                        <i class="fa-solid fa-plus mr-1.5"></i> Agregar
-                    </button>
-                    <button onclick="openDamageModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center">
-                        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> Daños
-                    </button>
-                    <button onclick="requestImportAction()" class="bg-teal-600 hover:bg-teal-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center" title="Importar registros desde un archivo Excel">
-                        <i class="fa-solid fa-file-import mr-1.5"></i> Importar Excel
-                    </button>
-                    <button onclick="exportToExcel()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center">
-                        <i class="fa-solid fa-file-excel mr-1.5"></i> Exportar Excel
-                    </button>
-                    <button onclick="window.print()" class="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center">
-                        <i class="fa-solid fa-print mr-1.5"></i> Imprimir
-                    </button>
-                    <button onclick="requestClearAllAction()" class="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center" title="Eliminar todos los registros actuales">
-                        <i class="fa-solid fa-trash-can mr-1.5"></i> Eliminar Todo
-                    </button>
-                    <button onclick="guardarTodo()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm shadow transition flex items-center">
-                        <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Guardar
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- MAIN CONTENT AREA -->
-        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            
-            <!-- SEARCH & STATS BAR -->
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
-                <div class="relative w-full md:w-96">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-solid fa-search"></i>
-                    </span>
-                    <input type="text" id="searchInput" onkeyup="filtrarTabla()" placeholder="Buscar por equipo, marca, modelo, serie o condición..." 
-                        class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-500">
-                </div>
-                <div class="flex items-center space-x-6 text-sm text-gray-600">
-                    <div>Total Registros: <span id="totalRegistros" class="font-bold text-gray-900">0</span></div>
-                    <div class="flex items-center"><span class="w-3 h-3 bg-emerald-500 rounded-full inline-block mr-1.5"></span> Operativos / Buenos</div>
-                    <div class="flex items-center"><span class="w-3 h-3 bg-red-500 rounded-full inline-block mr-1.5"></span> Malogrados / Inoperativos</div>
                 </div>
             </div>
 
-            <!-- TABLE 1: EQUIPOS PRINCIPALES -->
-            <div id="sectionTabla1" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 bg-pink-900 text-white flex justify-between items-center">
-                    <div>
-                        <span class="text-xs uppercase tracking-widest text-pink-200 font-semibold">IEP 20125 NUESTRA SEÑORA DEL ROSARIO</span>
-                        <h3 class="font-bold text-lg"><i class="fa-solid fa-laptop text-pink-300 mr-2"></i> Inventario de Equipos Tecnológicos (Secundaria)</h3>
-                    </div>
-                    <span class="text-xs bg-white/20 text-white font-semibold px-3 py-1 rounded-full no-print">Tabla 1</span>
-                </div>
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-center border-collapse" id="tablaEquipos1">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-pink-100 text-pink-900 uppercase text-xs tracking-wider border-b border-pink-200">
-                                <th class="py-3.5 px-4 font-bold bg-pink-200 text-pink-900">Item</th>
-                                <th class="py-3.5 px-4 font-bold">Equipo</th>
-                                <th class="py-3.5 px-4 font-bold">Marca</th>
-                                <th class="py-3.5 px-4 font-bold">Modelo</th>
-                                <th class="py-3.5 px-4 font-bold">N° Serie</th>
-                                <th class="py-3.5 px-4 font-bold">Condición</th>
-                                <th class="py-3.5 px-4 font-bold">Observación</th>
-                                <th class="py-3.5 px-4 font-bold text-center no-print">Acciones</th>
+                            <tr class="bg-indigo-950 border-b border-indigo-900 text-white text-xs uppercase tracking-wider">
+                                <th class="py-3 px-4 font-bold text-center">Item</th>
+                                <th class="py-3 px-4 font-bold text-center">Código Equipo</th>
+                                <th class="py-3 px-4 font-bold text-center">Equipo / Objeto</th>
+                                <th class="py-3 px-4 font-bold text-center">Marca</th>
+                                <th class="py-3 px-4 font-bold text-center">Modelo</th>
+                                <th class="py-3 px-4 font-bold text-center">Serie</th>
+                                <th class="py-3 px-4 font-bold text-center">Condición</th>
+                                <th class="py-3 px-4 font-bold text-center">Observación</th>
+                                <th class="py-3 px-4 font-bold text-center no-print">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody1" class="divide-y divide-gray-200 text-sm">
-                            <!-- JS Injection -->
-                        </tbody>
+                        <tbody id="tableBody" class="divide-y divide-slate-100 text-sm"></tbody>
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- TABLE 2: ACCESORIOS Y MOBILIARIO -->
-            <div id="sectionTabla2" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hidden">
-                <div class="px-6 py-4 bg-purple-900 text-white flex justify-between items-center">
-                    <div>
-                        <span class="text-xs uppercase tracking-widest text-purple-200 font-semibold">IEP 20125 NUESTRA SEÑORA DEL ROSARIO</span>
-                        <h3 class="font-bold text-lg"><i class="fa-solid fa-boxes-stacked text-purple-300 mr-2"></i> Accesorios, Periféricos y Mobiliario</h3>
-                    </div>
-                    <span class="text-xs bg-white/20 text-white font-semibold px-3 py-1 rounded-full no-print">Tabla 2</span>
-                </div>
+        <!-- Pestaña 2: Equipos Dadas de Baja -->
+        <div id="viewBaja" class="hidden">
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6 no-print">
+                <span class="text-xs font-semibold text-slate-400 uppercase">Registros en Custodia de Baja</span>
+                <h2 id="bajaCount" class="text-3xl font-extrabold text-rose-700">0</h2>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-center border-collapse" id="tablaEquipos2">
+                    <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-purple-100 text-purple-900 uppercase text-xs tracking-wider border-b border-purple-200">
-                                <th class="py-3.5 px-4 font-bold bg-purple-200 text-purple-900">Item</th>
-                                <th class="py-3.5 px-4 font-bold">Equipo o Objeto</th>
-                                <th class="py-3.5 px-4 font-bold">Marca y Modelo</th>
-                                <th class="py-3.5 px-4 font-bold">Cantidad</th>
-                                <th class="py-3.5 px-4 font-bold">Condición</th>
-                                <th class="py-3.5 px-4 font-bold">Observación</th>
-                                <th class="py-3.5 px-4 font-bold text-center no-print">Acciones</th>
+                            <tr class="bg-rose-900 border-b border-rose-950 text-white text-xs uppercase tracking-wider">
+                                <th class="py-3 px-4 font-bold text-center">Código Acta</th>
+                                <th class="py-3 px-4 font-bold text-center">Código Equipo</th>
+                                <th class="py-3 px-4 font-bold text-center">Fecha</th>
+                                <th class="py-3 px-4 font-bold text-center">Equipo</th>
+                                <th class="py-3 px-4 font-bold text-center">Marca / Modelo</th>
+                                <th class="py-3 px-4 font-bold text-center">Serie</th>
+                                <th class="py-3 px-4 font-bold text-center">Motivo Principal</th>
+                                <th class="py-3 px-4 font-bold text-center no-print">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody2" class="divide-y divide-gray-200 text-sm">
-                            <!-- JS Injection -->
-                        </tbody>
+                        <tbody id="tableBajaBody" class="divide-y divide-slate-100 text-sm"></tbody>
                     </table>
                 </div>
             </div>
+        </div>
+    </main>
 
-        </main>
-
-        <!-- FOOTER -->
-        <footer class="bg-white border-t border-gray-200 py-4 mt-auto no-print">
-            <div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-500">
-                IEP 20125 Nuestra Señora del Rosario &copy; 2026 — Sistema de Gestión de Inventario Tecnológico CIST
+    <!-- Modal Agregar / Editar -->
+    <div id="itemModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden no-print">
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl mx-4">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-800">Agregar Registro</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-        </footer>
-
-    </div>
-
-    <!-- MODAL AGREGAR / EDITAR REGISTRO -->
-    <div id="recordModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg border border-gray-100">
-            <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
-                <h3 id="modalTitle" class="text-lg font-bold text-gray-900">Agregar Nuevo Registro</h3>
-                <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600 text-xl"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form id="recordForm" onsubmit="saveRecord(event)" class="space-y-4">
+            <form id="itemForm" onsubmit="saveItem(event)">
                 <input type="hidden" id="editIndex">
-                <input type="hidden" id="activeTableTab" value="tabla1">
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Sección / Tabla</label>
-                        <select id="formTableType" onchange="toggleFormFields()" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
-                            <option value="tabla1">Tabla 1 (Equipos Principales)</option>
-                            <option value="tabla2">Tabla 2 (Accesorios / Mobiliario)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Item N°</label>
-                        <input type="number" id="formItem" required class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
-                    </div>
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Código de Equipo</label>
+                    <input type="text" id="codigoEquipo" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" placeholder="Ej. EQ-2026-001">
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" id="labelCol2">Equipo</label>
-                    <input type="text" id="formCol2" required placeholder="Ej. LAPTOP, PROYECTOR..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" id="labelCol3">Marca</label>
-                        <input type="text" id="formCol3" required placeholder="Ej. LENOVO, DELL..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
-                    </div>
-                    <div id="groupCol4">
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" id="labelCol4">Modelo</label>
-                        <input type="text" id="formCol4" placeholder="Ej. THINKPAD..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div id="groupCol5">
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" id="labelCol5">N° Serie</label>
-                        <input type="text" id="formCol5" placeholder="Ej. CB25098475..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Equipo</label>
+                        <input type="text" id="equipo" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" id="labelCol6">Condición</label>
-                        <input type="text" id="formCol6" required placeholder="Ej. REGULAR-FUNCIONANDO..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Marca</label>
+                        <input type="text" id="marca" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                 </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Observación</label>
-                    <textarea id="formCol7" rows="2" placeholder="Detalle observaciones..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-pink-500"></textarea>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Modelo</label>
+                        <input type="text" id="modelo" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nº Serie</label>
+                        <input type="text" id="serie" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
                 </div>
-
-                <div class="flex justify-end space-x-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm transition">Cancelar</button>
-                    <button type="submit" class="px-5 py-2 bg-pink-600 hover:bg-pink-700 text-white font-semibold rounded-xl text-sm transition shadow">Guardar Registro</button>
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Condición</label>
+                    <input type="text" id="condicion" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Observación</label>
+                    <textarea id="observacion" rows="3" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL REPORTE DE DAÑOS -->
-    <div id="damageModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white flex justify-between items-center">
-                <div class="flex items-center space-x-3">
-                    <i class="fa-solid fa-triangle-exclamation text-2xl text-amber-200"></i>
+    <!-- MODAL DE DAR DE BAJA -->
+    <div id="bajaModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden overflow-y-auto py-6">
+        <div class="bg-white rounded-xl max-w-4xl w-full p-8 shadow-2xl mx-4 my-auto relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6 border-b pb-4 no-print">
+                <div class="flex items-center gap-3">
+                    <span class="bg-rose-100 text-rose-700 p-2 rounded-lg"><i class="fa-solid fa-file-circle-xmark text-xl"></i></span>
                     <div>
-                        <h3 class="text-lg font-bold">Formato de Reporte de Daños de Equipos</h3>
-                        <p class="text-xs text-amber-100">IEP 20125 Nuestra Señora del Rosario — Registro en Blanco (Filas y Columnas)</p>
+                        <h3 class="text-xl font-bold text-slate-900">Formato de Baja de Equipo</h3>
+                        <p class="text-xs text-slate-500">Documento oficial basado en el estándar institucional</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2 no-print">
-                    <button onclick="addRowDamage()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center">
-                        <i class="fa-solid fa-plus mr-1"></i> Añadir Fila
+                <div class="flex items-center gap-2">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center shadow">
+                        <i class="fa-solid fa-print mr-2"></i> Imprimir Acta
                     </button>
-                    <button onclick="window.print()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center">
-                        <i class="fa-solid fa-print mr-1"></i> Imprimir / PDF
-                    </button>
-                    <button onclick="closeDamageModal()" class="text-white hover:text-gray-200 text-xl ml-2"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="closeBajaModal()" class="text-slate-400 hover:text-slate-600 p-2"><i class="fa-solid fa-xmark text-xl"></i></button>
                 </div>
             </div>
-            
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-200 text-sm">
-                        <div><strong class="text-gray-600">Institución:</strong> IEP 20125 Ntra. Sra. del Rosario</div>
-                        <div><strong class="text-gray-600">Mes / Año:</strong> <span id="damagePrintMes">OCTUBRE 2026</span></div>
-                        <div><strong class="text-gray-600">Responsable:</strong> <span id="damagePrintResp">Prof. Responsable CIST</span></div>
+
+            <div id="printableActa" class="bg-white text-slate-900 p-2">
+                <div class="border-2 border-slate-800 p-6">
+                    <div class="text-center border-b-2 border-slate-800 pb-4 mb-4">
+                        <h2 class="text-lg font-bold uppercase tracking-wide">ACTA DE BAJA Y RETIRO DE EQUIPO INFORMÁTICO</h2>
+                        <p class="text-xs font-semibold text-slate-600">ÁREA DE TI Y SISTEMAS / GESTIÓN DE ACTIVOS DE INFORMÁTICA</p>
                     </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-center border-collapse border border-gray-300" id="damageTableGrid">
-                            <thead>
-                                <tr class="bg-amber-100 text-amber-900 uppercase text-xs">
-                                    <th class="border border-gray-300 p-2 font-bold w-12 bg-amber-200">Ítem</th>
-                                    <th class="border border-gray-300 p-2 font-bold w-32">Equipo / Objeto</th>
-                                    <th class="border border-gray-300 p-2 font-bold w-28">Marca / Modelo</th>
-                                    <th class="border border-gray-300 p-2 font-bold w-24">N° Serie / Placa</th>
-                                    <th class="border border-gray-300 p-2 font-bold">Descripción Detallada del Daño / Falla</th>
-                                    <th class="border border-gray-300 p-2 font-bold w-36">Acción Correctiva Sugerida</th>
-                                    <th class="border border-gray-300 p-2 font-bold w-16 text-center no-print">Quitar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="damageTbody" class="text-sm">
-                                <!-- Filas dinámicas en blanco -->
-                            </tbody>
-                        </table>
-                    </div>
+
+                    <form id="bajaForm" onsubmit="confirmarBaja(event)">
+                        <input type="hidden" id="bajaSourceIndex">
+
+                        <div class="mb-4">
+                            <h4 class="bg-slate-800 text-white px-2 py-1 text-xs font-bold uppercase mb-2">1. INFORMACIÓN GENERAL</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                <div>
+                                    <label class="font-bold block text-slate-700">Código de Acta:</label>
+                                    <input type="text" id="bajaCodigoActa" required class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Fecha de Solicitud:</label>
+                                    <input type="date" id="bajaFecha" required class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Área / Departamento:</label>
+                                    <input type="text" id="bajaArea" value="NIVEL SECUNDARIO" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Sede / Ubicación:</label>
+                                    <input type="text" id="bajaUbicacion" value="SEDE PRINCIPAL" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Solicitado Por:</label>
+                                    <input type="text" id="bajaSolicitadoPor" placeholder="Nombre Responsable" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Cargo:</label>
+                                    <input type="text" id="bajaCargo" placeholder="Cargo" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="bg-slate-800 text-white px-2 py-1 text-xs font-bold uppercase mb-2">2. IDENTIFICACIÓN Y ESPECIFICACIONES DEL EQUIPO</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                <div>
+                                    <label class="font-bold block text-slate-700">Código de Equipo:</label>
+                                    <input type="text" id="bajaCodigoEquipoInput" required class="w-full border border-slate-300 p-1.5 rounded focus:outline-none font-mono font-bold text-indigo-700">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Equipo:</label>
+                                    <input type="text" id="bajaEquipo" required class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Marca:</label>
+                                    <input type="text" id="bajaMarca" required class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Modelo:</label>
+                                    <input type="text" id="bajaModelo" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Número de Serie (S/N):</label>
+                                    <input type="text" id="bajaSerie" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Procesador / Detalle:</label>
+                                    <input type="text" id="bajaProcesador" placeholder="Ej. Intel i5 / N/A" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Memoria RAM / Capacidad:</label>
+                                    <input type="text" id="bajaRam" placeholder="Ej. 8 GB / N/A" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="font-bold block text-slate-700">Estado Físico Actual:</label>
+                                    <input type="text" id="bajaEstadoFisico" class="w-full border border-slate-300 p-1.5 rounded focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="bg-slate-800 text-white px-2 py-1 text-xs font-bold uppercase mb-2">3. MOTIVO DE LA BAJA DE EQUIPO</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                <label class="flex items-center gap-2"><input type="radio" name="motivoBaja" value="Obsolescencia Tecnológica" checked> Obsolescencia Tecnológica (No soporta software actual)</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="motivoBaja" value="Falla Mecánica / Electrónica irreparable"> Falla Mecánica / Electrónica irreparable (Costo elevado)</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="motivoBaja" value="Daño Físico Severo"> Daño Físico Severo (Golpe, derrame de líquido, etc.)</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="motivoBaja" value="Pérdida / Robo / Extravío"> Pérdida / Robo / Extravío</label>
+                                <label class="flex items-center gap-2"><input type="radio" name="motivoBaja" value="Otro Motivo"> Otro motivo</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="bg-slate-800 text-white px-2 py-1 text-xs font-bold uppercase mb-2">4. DIAGNÓSTICO TÉCNICO Y JUSTIFICACIÓN DETALLADA</h4>
+                            <textarea id="bajaDiagnostico" rows="2" required placeholder="Describa el diagnóstico realizado..." class="w-full border border-slate-300 p-2 text-xs rounded focus:outline-none"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <h4 class="bg-slate-800 text-white px-2 py-1 text-xs font-bold uppercase mb-2">5. PROTOCOLO DE SEGURIDAD Y DESTINO FINAL</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                <div>
+                                    <label class="font-bold block">Formateo seguro realizado:</label>
+                                    <select id="bajaFormateo" class="w-full border border-slate-300 p-1.5 rounded"><option>Sí</option><option>No</option><option selected>N/A (Sin disco)</option></select>
+                                </div>
+                                <div>
+                                    <label class="font-bold block">Destino final recomendado:</label>
+                                    <select id="bajaDestino" class="w-full border border-slate-300 p-1.5 rounded"><option>Chatarra / Reciclaje RAEE</option><option>Repuestos / Canibalización</option><option>Donación</option></select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 pt-6 border-t border-slate-300">
+                            <div class="grid grid-cols-3 gap-4 text-center text-[10px]">
+                                <div class="border-t border-slate-800 pt-2"><p class="font-bold">SOLICITADO / ENTREGADO POR</p><p>Firma y Nombre</p></div>
+                                <div class="border-t border-slate-800 pt-2"><p class="font-bold">REVISADO / EVALUADO POR</p><p>Especialista TI</p></div>
+                                <div class="border-t border-slate-800 pt-2"><p class="font-bold">AUTORIZADO POR</p><p>Administración / Gerencia</p></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-2 no-print">
+                            <button type="button" onclick="closeBajaModal()" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition">Cancelar</button>
+                            <button type="submit" class="px-5 py-2 rounded-lg bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition flex items-center shadow">
+                                <i class="fa-solid fa-check mr-2"></i> Registrar y Emitir Baja
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </div>
-            
-            <div class="px-6 py-4 bg-white border-t border-gray-200 flex justify-between items-center no-print">
-                <span class="text-xs text-gray-500">Puede escribir directamente en cualquiera de las celdas de la tabla en blanco.</span>
-                <button onclick="closeDamageModal()" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-sm transition shadow">Cerrar Formato</button>
             </div>
         </div>
     </div>
 
-    <!-- APP LOGIC -->
     <script>
-        // DATOS INICIALES EXTRAÍDOS DE EXCEL
-        let dataTabla1 = [
-            { item: 1, col2: "LAPTOP", col3: "LENOVO", col4: "THINKPAD", col5: "", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 2, col2: "LAPTOP", col3: "LENOVO", col4: "G485", col5: "CB25098475", col6: "MALOGRADO", col7: "PLACA Y DISCO DURO MALOGRADO PARA DAR DE BAJA" },
-            { item: 3, col2: "LAPTOP", col3: "DELL", col4: "LATITUDE 7490", col5: "740805009246", col6: "REGULAR-FUNCIONANDO", col7: "A CARGO DEL CIST" },
-            { item: 4, col2: "LAPTOP", col3: "DELL", col4: "LATITUDE 7490", col5: "740805009270", col6: "REGULAR-FUNCIONANDO", col7: "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO" },
-            { item: 5, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP16116Q", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 6, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1617RC", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 7, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP16171K", col6: "REGULAR-FUNCIONANDO", col7: "PANTALLA RAJADA PHAT MALOGRADO" },
-            { item: 8, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1615CD", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 9, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP162TP2", col6: "MALOGRADO - INOPERATIVO", col7: "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP" },
-            { item: 10, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1612A5", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 11, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164WOE", col6: "REGULAR -FUNCIONANDO", col7: "" },
-            { item: 12, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP16411J3", col6: "REGULAR-FUNCIONANDO", col7: "ALGUNOS BOTONES SALIDOS" },
-            { item: 13, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP16181B", col6: "REGULAR-FUNCIONANDO", col7: "TECLADO Y PAHT MALOGRADOS" },
-            { item: 14, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164354", col6: "REGULAR-FUNCIONANDO", col7: "TECLADO MALOGRADO SIN MAUSE" },
-            { item: 15, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1610T0", col6: "REGULAR-FUNCIONANDO", col7: "TECLADO Y PAHT MALOGRADOS" },
-            { item: 16, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1616ZK", col6: "REGULAR-FUNCIONANDO", col7: "PANTALLA SIN SEÑAL DE VIDEO Y TECLADO MALOGRADO" },
-            { item: 17, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1615EM", col6: "REGULAR-FUNCIONANDO", col7: "PANTALLA TECLADO Y PAHT MALOGRADO" },
-            { item: 18, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1615F5", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 19, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP160ZJU", col6: "REGULAR-FUNCIONANDO", col7: "TECLADO Y PAHT MALOGRADOS" },
-            { item: 20, col2: "LAPTOP", col3: "DELL", col4: "LATITUDE7490", col5: "740805009666", col6: "REGULAR-FUNCIONANDO", col7: "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO" },
-            { item: 21, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1623YT", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 22, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164W8H", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 23, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164224", col6: "MALOGRADO -INOPERATIVO", col7: "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS" },
-            { item: 24, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164X94", col6: "REGULAR-FUNCIONANDO", col7: "ALGUNOS BOTONES DE TECLADO SALIDO" },
-            { item: 25, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1613DM", col6: "REGULAR-FUNCIONANDO", col7: "ALGUNOS BOTONES DE TECLADO SALIDO" },
-            { item: 26, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1641LK", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 27, col2: "LAPTOP", col3: "LENOVO", col4: "B50-81", col5: "MP16151D", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 28, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1611M", col6: "REGULAR-FUNCIONANDO", col7: "ALGUNOS BOTONES MALOGRADOS" },
-            { item: 29, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164WKS", col6: "MALOGRADO - INOPERATIVO", col7: "NO ARRANCA PLACA MALOGRADA" },
-            { item: 30, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP164WJM", col6: "MALOGRADO - INOPERATIVO", col7: "NO ARRANCA PLACA MALOGRADA" },
-            { item: 31, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP16172T", col6: "MALOGRADO-NO ARRANCA", col7: "NO ENCIENDE" },
-            { item: 32, col2: "LAPTOP", col3: "COMPAQ", col4: "NO TIENE", col5: "CND8150150", col6: "MALOGRADO-NO ARRANCA", col7: "NO ENCIENDE PLACA MALOGRADA Y DISCO DURO DAR DE BAJA" },
-            { item: 33, col2: "LAPTOP", col3: "LENOVO", col4: "B50-80", col5: "MP1617HE", col6: "REGULAR-FUNCIONANDO", col7: "" },
-            { item: 34, col2: "PROYECTOR", col3: "VIEWSONIC PA503W", col4: "VS16907", col5: "V0T192002959", col6: "MALOGRADO", col7: "FOCO BOMBILLA QUEMADOS" },
-            { item: 35, col2: "PROYECTOR", col3: "VIEWSONIC PA503W", col4: "VS16907", col5: "V0R183602706", col6: "MALOGRADO", col7: "FOCO BOMBILLA QUEMADOS" },
-            { item: 36, col2: "PROYECTOR", col3: "VIEWSONIC PA503W", col4: "VS16907", col5: "V0T192002942", col6: "MALOGRADO", col7: "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO" },
-            { item: 37, col2: "PROYECTOR", col3: "VIEWSONIC PA503W", col4: "VS16907", col5: "V0T192002940", col6: "MALOGRADO", col7: "FOCO Y BOMBILLA MALOGRADO" },
-            { item: 38, col2: "PROYECTOR", col3: "VIEWSONIC PA503W", col4: "VS16907", col5: "V0T192002972", col6: "MALOGRADO", col7: "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO" },
-            { item: 39, col2: "PROYECTOR", col3: "EPSON", col4: "H430A", col5: "PSPK1901094", col6: "MALOGRADO", col7: "FOCO BOMBILLA QUEMADOS" },
-            { item: 40, col2: "PROYECTOR", col3: "EPSON", col4: "V11H743021", col5: "", col6: "FUNCIONANDO", col7: "PROYECTOR DE PARED EN EL AULA DE EPT" },
-            { item: 41, col2: "TECLADO", col3: "MICROSOFT", col4: "I366", col5: "66903641048", col6: "MALOGRADO", col7: "PARA DAR DE BAJA" },
-            { item: 42, col2: "TECLADO", col3: "DELL", col4: "KB2161", col5: "SIN SERIE", col6: "FUNCIONANDO", col7: "" },
-            { item: 43, col2: "TECLADO", col3: "CYBERTEL", col4: "CYBK108", col5: "3412K1081102", col6: "FUNCIONANDO", col7: "" },
-            { item: 44, col2: "TECLADO", col3: "CYBERTEL", col4: "CYBK108", col5: "3371K1080297", col6: "FUNCIONANDO", col7: "NO FUNCIONA TECLAS MALOGRADAS" },
-            { item: 45, col2: "TECLADO", col3: "CYBERTEL", col4: "CYBK108", col5: "3371K1080299", col6: "FUNCIONANDO", col7: "" },
-            { item: 46, col2: "TECLADO", col3: "GENIUS", col4: "GK-070006/U", col5: "YB44C1U13124", col6: "FUNCIONANDO", col7: "" },
-            { item: 47, col2: "TECLADO", col3: "GENIUS", col4: "GK-10006L5", col5: "XEC407016806", col6: "FUNCIONANDO", col7: "" }
+        let inventoryData = [
+            {"item": 1, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "THINKPAD", "serie": "", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 2, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "G485", "serie": "CB25098475", "condicion": "MALOGRADO", "observacion": "PLACA Y DISCO DURO MALOGRADO PARA DAR DE BAJA"},
+            {"item": 3, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009246", "condicion": "REGULAR-FUNCIONANDO", "observacion": "A CARGO DEL CIST"},
+            {"item": 4, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009270", "condicion": "REGULAR-FUNCIONANDO", "observacion": "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO"},
+            {"item": 5, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16116Q", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 6, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1617RC", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 7, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16171K", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA RAJADA PHAT MALOGRADO"},
+            {"item": 8, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615CD", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 9, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP162TP2", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
+            {"item": 10, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1612A5", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 11, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WOE", "condicion": "REGULAR -FUNCIONANDO", "observacion": ""},
+            {"item": 12, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16411J3", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BOTONES SALIDOS"},
+            {"item": 13, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16181B", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
+            {"item": 14, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164354", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO MALOGRADO SIN MAUSE"},
+            {"item": 15, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1610T0", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
+            {"item": 16, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1616ZK", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA SIN SEÑAL DE VIDEO Y TECLADO MALOGRADO"},
+            {"item": 17, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615EM", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA TECLADO Y PAHT MALOGRADO"},
+            {"item": 18, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615F5", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 19, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP160ZJU", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
+            {"item": 20, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE7490", "serie": "740805009666", "condicion": "REGULAR-FUNCIONANDO", "observacion": "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO"},
+            {"item": 21, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1623YT", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 22, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164W8H", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 23, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164224", "condicion": "MALOGRADO -INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
+            {"item": 24, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164X94", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BOTONES DE TECLADO SALIDO"},
+            {"item": 25, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1613DM", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BONES DE TECLADO SALIDO"},
+            {"item": 26, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1641LK", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 27, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-81", "serie": "MP16151D", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 28, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1611M", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS 2QBOTONES MALGRADOS"},
+            {"item": 29, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WKS", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
+            {"item": 30, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WJM", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
+            {"item": 31, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16172T", "condicion": "MALOGRADO-NO ARRANCA", "observacion": "NO ENCIENDE"},
+            {"item": 32, "equipo": "LAPTOP", "marca": "COMPAQ", "modelo": "NO TIENE", "serie": "CND8150150", "condicion": "MALOGRADO-NO ARRANCA", "observacion": "NO ENCIENDE PLANCA MALOGRADA Y DISCO DURO DAR DE BAJA"},
+            {"item": 33, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1617HE", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
+            {"item": 34, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002959", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
+            {"item": 35, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0R183602706", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
+            {"item": 36, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002942", "condicion": "MALOGRADO", "observacion": "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO"},
+            {"item": 37, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002940", "condicion": "MALOGRADO", "observacion": "FOCO Y BOMBILLA MALOGRADO"},
+            {"item": 38, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002972", "condicion": "MALOGRADO", "observacion": "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO"},
+            {"item": 39, "equipo": "PROYECTOR", "marca": "EPSON", "modelo": "H430A", "serie": "PSPK1901094", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
+            {"item": 40, "equipo": "PROYECTOR", "marca": "EPSON", "modelo": "V11H743021", "serie": "", "condicion": "FUNCIONANDO", "observacion": "PROYECTOR DE PARED EN EL AULA DE EPT"},
+            {"item": 41, "equipo": "TECLADO", "marca": "MICROSOFT", "modelo": "I366", "serie": "66903641048", "condicion": "MALOGRADO", "observacion": "PARA DAR DE BAJA"},
+            {"item": 42, "equipo": "TECLADO", "marca": "DELL", "modelo": "KB2161", "serie": "SIN SERIE", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 43, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3412K1081102", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 44, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3371K1080297", "condicion": "FUNCIONANDO", "observacion": "NO FUNCIONA TECLAS MALOGRADAS"},
+            {"item": 45, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3371K1080299", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 46, "equipo": "TECLADO", "marca": "GENIUS", "modelo": "GK-070006/U", "serie": "YB44C1U13124", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 47, "equipo": "TECLADO", "marca": "GENIUS", "modelo": "GK-10006L5", "serie": "XEC407016806", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 48, "equipo": "CARGADORES DE LAPTOP", "marca": "DELL-HA65NM130", "modelo": "2 UNIDADES", "serie": "1 BUENO / 1 MALOGRADO", "condicion": "MIXTO", "observacion": ""},
+            {"item": 49, "equipo": "CARGADORES DE LAPTOP", "marca": "THINK PAD", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
+            {"item": 50, "equipo": "CARGADORES DE LAPTOP", "marca": "LENOVO", "modelo": "22 UNIDADES", "serie": "17 BUENOS / 5 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
+            {"item": 51, "equipo": "ESTABILIZADORES", "marca": "FORZA", "modelo": "4 UNIDADES", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 52, "equipo": "ESTABILIZADORES", "marca": "ORION", "modelo": "4 UNIDADES", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 53, "equipo": "ESTABILIZADORES", "marca": "OMEGA", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
+            {"item": 54, "equipo": "SILLAS", "marca": "MADERA", "modelo": "24 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
+            {"item": 55, "equipo": "MESAS", "marca": "VERDE", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
+            {"item": 56, "equipo": "PIZARRA", "marca": "ACRILICA", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
+            {"item": 57, "equipo": "MOUSE", "marca": "LOGITECH", "modelo": "13 UNIDADES", "serie": "12 BUENOS / 1 MALOGRADO", "condicion": "MIXTO", "observacion": ""},
+            {"item": 58, "equipo": "MOUSE", "marca": "GENIUS", "modelo": "8 UNIDADES", "serie": "6 USB / 2 CIRCULAR PC", "condicion": "BUENO", "observacion": ""},
+            {"item": 59, "equipo": "MOUSE", "marca": "DELL-HA65NM130", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
+            {"item": 60, "equipo": "MESAS", "marca": "ACRILICAS Y MADERA", "modelo": "20 UNIDADES", "serie": "BUENOS", "condicion": "BUENO", "observacion": ""},
+            {"item": 61, "equipo": "PANTALLAS", "marca": "LG", "modelo": "5 UNIDADES", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
+            {"item": 62, "equipo": "PANTALLAS", "marca": "DELL", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
+            {"item": 63, "equipo": "PANTALLAS", "marca": "LG", "modelo": "2 UNIDADES", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
+            {"item": 64, "equipo": "PANTALLAS", "marca": "PHILIPS", "modelo": "1 UNIDAD", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
+            {"item": 65, "equipo": "PANTALLAS", "marca": "AOC", "modelo": "1 UNIDAD", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
+            {"item": 66, "equipo": "ROUTER", "marca": "WOW", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "BUENO", "observacion": ""},
+            {"item": 67, "equipo": "ACCESS POINT", "marca": "TP-LINK", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "BUENO", "observacion": ""},
+            {"item": 68, "equipo": "GABINETE BITEL", "marca": "BITEL", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "OPERANDO INTERNET", "observacion": ""},
+            {"item": 69, "equipo": "CABLE DE ENERGIA", "marca": "GENERICO", "modelo": "16 UNIDADES", "serie": "13 REGULAR / 3 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
+            {"item": 70, "equipo": "CABLE VGA", "marca": "GENERICO", "modelo": "11 UNIDADES", "serie": "9 REGULAR / 2 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
+            {"item": 71, "equipo": "CARTUCHERAS", "marca": "EPSON", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "CON 7 PLUMONES EPSON DENTRO"},
+            {"item": 72, "equipo": "CONTROL", "marca": "ECRAM", "modelo": "6 UNIDADES", "serie": "3 OPERATIVOS / 3 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
+            {"item": 73, "equipo": "CONTROL", "marca": "VIEW SONIC", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "DE PROYECTORES"},
+            {"item": 74, "equipo": "CONTROL", "marca": "EPSON", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "DE PROYECTOR DE PARED"},
+            {"item": 75, "equipo": "ROUTER", "marca": "LB-LINK", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "OPERATIVO", "observacion": ""},
+            {"item": 76, "equipo": "MODEM", "marca": "VELOX", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "DE FIBRA OPTICA", "observacion": ""}
         ];
 
-        let dataTabla2 = [
-            { item: 1, col2: "CARGADORES DE LAPTOP", col3: "DELL-HA65NM130", col4: "2", col5: "1 BUENO", col6: "1 MALOGRADO" },
-            { item: 2, col2: "CARGADORES DE LAPTOP", col3: "THINK PAD", col4: "1", col5: "BUENO", col6: "" },
-            { item: 3, col2: "CARGADORES DE LAPTOP", col3: "LENOVO", col4: "22", col5: "17 BUENOS", col6: "5 MALOGRADOS" },
-            { item: 4, col2: "ESTABILIZADORES", col3: "FORZA", col4: "4", col5: "FUNCIONANDO", col6: "" },
-            { item: 5, col2: "ESTABILIZADORES", col3: "ORION", col4: "4", col5: "FUNCIONANDO", col6: "" },
-            { item: 6, col2: "ESTABILIZADORES", col3: "OMEGA", col4: "1", col5: "FUNCIONANDO", col6: "" },
-            { item: 7, col2: "SILLAS", col3: "MADERA", col4: "24", col5: "REGULAR", col6: "" },
-            { item: 8, col2: "MESAS", col3: "VERDE", col4: "4", col5: "REGULAR", col6: "" },
-            { item: 9, col2: "PIZARRA", col3: "ACRILICA", col4: "1", col5: "REGULAR", col6: "" },
-            { item: 10, col2: "MAUSE", col3: "LOGUITECH", col4: "13 BUENOS", col5: "12 BUENOS", col6: "1 MALOGRADO" },
-            { item: 11, col2: "MAUSE", col3: "GENIUS", col4: "8 BUENOS", col5: "6 ENTRADA USB", col6: "2 ENTRADA CIRCULAR PARA PC" },
-            { item: 12, col2: "MAUSE", col3: "DELL-HA65NM130", col4: "1", col5: "BUENO", col6: "" },
-            { item: 13, col2: "MESAS", col3: "ACRILICAS Y MADERA", col4: "20", col5: "BUENOS", col6: "" },
-            { item: 14, col2: "PANTALLAS", col3: "LG", col4: "5", col5: "BUENO", col6: "" },
-            { item: 15, col2: "PANTALLAS", col3: "DELL", col4: "1", col5: "BUENO", col6: "" },
-            { item: 16, col2: "PANTALLAS", col3: "LG", col4: "2", col5: "INOPERATIVO", col6: "MALOGRADO" },
-            { item: 17, col2: "PANTALLAS", col3: "PHILIPS", col4: "1", col5: "INOPERATIVO", col6: "MALOGRADO" },
-            { item: 18, col2: "PANTALLAS", col3: "AOC", col4: "1", col5: "INOPERATIVO", col6: "MALOGRADO" },
-            { item: 19, col2: "ROUTER", col3: "WOW", col4: "1", col5: "OPERATIVO", col6: "" },
-            { item: 20, col2: "ACCESPOINT", col3: "TP-LINK", col4: "1", col5: "OPERATIVO", col6: "" },
-            { item: 21, col2: "GABINETE BITEL", col3: "BITEL", col4: "1", col5: "BUENO", col6: "OPERANDO LINEA DE INTERNET" },
-            { item: 22, col2: "CABLE DE ENERGIA", col3: "-", col4: "16", col5: "REGULAR", col6: "3 MALOGRADOS" },
-            { item: 23, col2: "CABLE VGA", col3: "-", col4: "11", col5: "REGULAR", col6: "2 MALOGRADOS" },
-            { item: 24, col2: "CARTUCHERAS", col3: "EPSON", col4: "4", col5: "REGULAR", col6: "CON 7 PLUMON EPSON DENTRO" },
-            { item: 25, col2: "CONTROL", col3: "ECRAM", col4: "6", col5: "REGULAR", col6: "3 MALOGRADOS" },
-            { item: 26, col2: "CONTROL", col3: "VIEW SONIC", col4: "4", col5: "REGULAR", col6: "DE PROYECTORES" },
-            { item: 27, col2: "CONTROL", col3: "EPSON", col4: "1", col5: "REGULAR", col6: "DE PROYECTOR DE PARED" },
-            { item: 28, col2: "ROUTER", col3: "LB- LINK", col4: "1", col5: "REGULAR", col6: "OPERATIVO" },
-            { item: 29, col2: "MODEM", col3: "VELOX", col4: "1", col5: "REGULAR", col6: "DE FIBRA OPTICA" }
-        ];
+        let bajaData = [];
 
-        let pendingAction = null; 
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const saved1 = localStorage.getItem('inv_rosario_tabla1');
-            const saved2 = localStorage.getItem('inv_rosario_tabla2');
-            const savedMes = localStorage.getItem('inv_rosario_mes');
-            const savedResp = localStorage.getItem('inv_rosario_resp');
-
-            if (saved1) dataTabla1 = JSON.parse(saved1);
-            if (saved2) dataTabla2 = JSON.parse(saved2);
-            if (savedMes) document.getElementById('headerMesAnio').value = savedMes;
-            if (savedResp) document.getElementById('headerPersonal').value = savedResp;
-
-            renderTables();
-            initDamageGrid();
+        inventoryData.forEach((item, idx) => {
+            if (!item.codigo) {
+                item.codigo = "EQ-2026-" + String(idx + 1).padStart(3, '0');
+            }
         });
 
-        let currentActiveTab = 'tabla1';
+        if (localStorage.getItem('inventory_2026_data')) {
+            inventoryData = JSON.parse(localStorage.getItem('inventory_2026_data'));
+        }
+        if (localStorage.getItem('inventory_2026_baja')) {
+            bajaData = JSON.parse(localStorage.getItem('inventory_2026_baja'));
+        }
 
-        function switchTab(tab) {
-            currentActiveTab = tab;
-            const btn1 = document.getElementById('btnTab1');
-            const btn2 = document.getElementById('btnTab2');
-            const sec1 = document.getElementById('sectionTabla1');
-            const sec2 = document.getElementById('sectionTabla2');
+        function manualSave() {
+            localStorage.setItem('inventory_2026_data', JSON.stringify(inventoryData));
+            localStorage.setItem('inventory_2026_baja', JSON.stringify(bajaData));
+            alert("¡Datos guardados con éxito en la aplicación!");
+        }
 
-            if (tab === 'tabla1') {
-                btn1.className = "px-4 py-2 rounded-xl font-semibold text-sm transition bg-pink-600 text-white shadow";
-                btn2.className = "px-4 py-2 rounded-xl font-semibold text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200";
-                sec1.classList.remove('hidden');
-                sec2.classList.add('hidden');
-            } else {
-                btn2.className = "px-4 py-2 rounded-xl font-semibold text-sm transition bg-purple-600 text-white shadow";
-                btn1.className = "px-4 py-2 rounded-xl font-semibold text-sm transition bg-gray-100 text-gray-700 hover:bg-gray-200";
-                sec2.classList.remove('hidden');
-                sec1.classList.add('hidden');
-            }
+        function saveData() {
+            localStorage.setItem('inventory_2026_data', JSON.stringify(inventoryData));
+            localStorage.setItem('inventory_2026_baja', JSON.stringify(bajaData));
             renderTables();
         }
 
-        function renderTables() {
-            const tbody1 = document.getElementById('tbody1');
-            const tbody2 = document.getElementById('tbody2');
+        function switchTab(tab) {
+            const activeDiv = document.getElementById('viewActive');
+            const bajaDiv = document.getElementById('viewBaja');
+            const activeBtn = document.getElementById('tabActiveBtn');
+            const bajaBtn = document.getElementById('tabBajaBtn');
+
+            if (tab === 'active') {
+                activeDiv.classList.remove('hidden');
+                bajaDiv.classList.add('hidden');
+                activeBtn.className = "py-3 border-b-2 border-indigo-600 text-indigo-600 font-semibold flex items-center";
+                bajaBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold flex items-center";
+            } else {
+                activeDiv.classList.add('hidden');
+                bajaDiv.classList.remove('hidden');
+                activeBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold flex items-center";
+                bajaBtn.className = "py-3 border-b-2 border-rose-600 text-rose-600 font-semibold flex items-center";
+            }
+        }
+
+        function renderTables(data = inventoryData) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            document.getElementById('totalCount').innerText = data.length;
+            document.getElementById('countActiveTab').innerText = inventoryData.length;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">No hay equipos activos.</td></tr>`;
+            } else {
+                data.forEach((item, index) => {
+                    let badgeColor = "bg-green-100 text-green-800";
+                    if (item.condicion && item.condicion.toUpperCase().includes("MALOGRADO")) {
+                        badgeColor = "bg-red-100 text-red-800";
+                    } else if (item.condicion && item.condicion.toUpperCase().includes("REGULAR")) {
+                        badgeColor = "bg-yellow-100 text-yellow-800";
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-semibold text-slate-500 text-center">${item.item || (index + 1)}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-indigo-700 text-xs text-center">${item.codigo || ('EQ-2026-' + String(index+1).padStart(3, '0'))}</td>
+                        <td class="py-3 px-4 font-medium text-slate-800 text-center">${item.equipo || ''}</td>
+                        <td class="py-3 px-4 text-center">${item.marca || ''}</td>
+                        <td class="py-3 px-4 text-center">${item.modelo || ''}</td>
+                        <td class="py-3 px-4 font-mono text-xs text-center">${item.serie || 'S/N'}</td>
+                        <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${item.condicion || 'BUENO'}</span></td>
+                        <td class="py-3 px-4 text-slate-500 text-xs text-center">${item.observacion || '-'}</td>
+                        <td class="py-3 px-4 text-center no-print">
+                            <div class="flex items-center justify-center gap-1">
+                                <button onclick="openBajaModal(${index})" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-xs font-semibold flex items-center" title="Dar de Baja">
+                                    <i class="fa-solid fa-file-circle-xmark mr-1"></i> Baja
+                                </button>
+                                <button onclick="editItem(${index})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteItem(${index})" class="text-red-600 hover:text-red-800 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            const tbodyBaja = document.getElementById('tableBajaBody');
+            tbodyBaja.innerHTML = '';
+            document.getElementById('bajaCount').innerText = bajaData.length;
+            document.getElementById('countBajaTab').innerText = bajaData.length;
+
+            if (bajaData.length === 0) {
+                tbodyBaja.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">No hay equipos dados de baja.</td></tr>`;
+            } else {
+                bajaData.forEach((baja, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-rose-50/50 transition border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-bold text-rose-700 text-center">${baja.codigoActa}</td>
+                        <td class="py-3 px-4 font-mono font-bold text-indigo-700 text-xs text-center">${baja.codigoEquipo || 'S/C'}</td>
+                        <td class="py-3 px-4 text-xs text-center">${baja.fecha}</td>
+                        <td class="py-3 px-4 font-medium text-center">${baja.equipo}</td>
+                        <td class="py-3 px-4 text-center">${baja.marca} / ${baja.modelo}</td>
+                        <td class="py-3 px-4 font-mono text-xs text-center">${baja.serie || 'S/N'}</td>
+                        <td class="py-3 px-4 text-xs text-center"><span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded font-semibold">${baja.motivo}</span></td>
+                        <td class="py-3 px-4 text-center no-print">
+                            <button onclick="verActa(${index})" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2 py-1 rounded text-xs font-semibold">
+                                <i class="fa-solid fa-print mr-1"></i> Imprimir Acta
+                            </button>
+                        </td>
+                    `;
+                    tbodyBaja.appendChild(tr);
+                });
+            }
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = inventoryData.filter(item => 
+                Object.values(item).some(val => String(val).toLowerCase().includes(query))
+            );
+            renderTables(filtered);
+        }
+
+        function openModal() {
+            document.getElementById('modalTitle').innerText = "Agregar Registro";
+            document.getElementById('itemForm').reset();
+            document.getElementById('editIndex').value = "";
             
-            tbody1.innerHTML = '';
-            tbody2.innerHTML = '';
+            const nextCodeNum = inventoryData.length + 1;
+            const suggestedCode = "EQ-2026-" + String(nextCodeNum).padStart(3, '0');
+            document.getElementById('codigoEquipo').value = suggestedCode;
 
-            dataTabla1.forEach((row, idx) => {
-                const isMal = row.col6.toUpperCase().includes('MALOGRAD') || row.col6.toUpperCase().includes('INOPERATIV');
-                const badgeColor = isMal ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800';
-                
-                tbody1.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition border-b border-gray-100">
-                        <td class="py-3 px-4 font-mono font-bold text-pink-900 bg-pink-50">${row.item}</td>
-                        <td class="py-3 px-4 font-bold text-gray-900">${row.col2}</td>
-                        <td class="py-3 px-4 text-gray-700">${row.col3}</td>
-                        <td class="py-3 px-4 text-gray-700">${row.col4}</td>
-                        <td class="py-3 px-4 font-mono text-xs text-gray-600">${row.col5 || '---'}</td>
-                        <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold ${badgeColor}">${row.col6}</span></td>
-                        <td class="py-3 px-4 text-gray-500 text-xs">${row.col7 || ''}</td>
-                        <td class="py-3 px-4 text-center space-x-2 no-print">
-                            <button onclick="editRecord('tabla1', ${idx})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="requestDeleteAction('tabla1', ${idx})" class="text-red-600 hover:text-red-800 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            dataTabla2.forEach((row, idx) => {
-                tbody2.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition border-b border-gray-100">
-                        <td class="py-3 px-4 font-mono font-bold text-purple-900 bg-purple-50">${row.item}</td>
-                        <td class="py-3 px-4 font-bold text-gray-900">${row.col2}</td>
-                        <td class="py-3 px-4 text-gray-700">${row.col3}</td>
-                        <td class="py-3 px-4 font-semibold text-gray-800">${row.col4}</td>
-                        <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">${row.col5}</span></td>
-                        <td class="py-3 px-4 text-gray-500 text-xs">${row.col6 || ''}</td>
-                        <td class="py-3 px-4 text-center space-x-2 no-print">
-                            <button onclick="editRecord('tabla2', ${idx})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="requestDeleteAction('tabla2', ${idx})" class="text-red-600 hover:text-red-800 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('totalRegistros').innerText = dataTabla1.length + dataTabla2.length;
+            document.getElementById('itemModal').classList.remove('hidden');
         }
 
-        // SOLICITUD DE ACCIONES CON CONTRASEÑA "admin2026"
-        function requestAddAction() {
-            pendingAction = { type: 'add' };
-            document.getElementById('pwdModalTitle').innerText = "Contraseña para Agregar";
-            document.getElementById('pwdModalSub').innerText = "Ingrese la contraseña admin2026 para agregar un nuevo registro";
-            document.getElementById('securePasswordInput').value = "";
-            document.getElementById('pwdError').classList.add('hidden');
-            document.getElementById('passwordModal').classList.remove('hidden');
+        function closeModal() {
+            document.getElementById('itemModal').classList.add('hidden');
         }
 
-        function requestDeleteAction(table, idx) {
-            pendingAction = { type: 'delete', table, idx };
-            document.getElementById('pwdModalTitle').innerText = "Contraseña para Eliminar";
-            document.getElementById('pwdModalSub').innerText = "Ingrese la contraseña admin2026 para eliminar este registro";
-            document.getElementById('securePasswordInput').value = "";
-            document.getElementById('pwdError').classList.add('hidden');
-            document.getElementById('passwordModal').classList.remove('hidden');
+        function editItem(index) {
+            const item = inventoryData[index];
+            document.getElementById('modalTitle').innerText = "Editar Registro";
+            document.getElementById('editIndex').value = index;
+            document.getElementById('codigoEquipo').value = item.codigo || ("EQ-2026-" + String(index + 1).padStart(3, '0'));
+            document.getElementById('equipo').value = item.equipo || '';
+            document.getElementById('marca').value = item.marca || '';
+            document.getElementById('modelo').value = item.modelo || '';
+            document.getElementById('serie').value = item.serie || '';
+            document.getElementById('condicion').value = item.condicion || '';
+            document.getElementById('observacion').value = item.observacion || '';
+            document.getElementById('itemModal').classList.remove('hidden');
         }
 
-        function requestImportAction() {
-            pendingAction = { type: 'import' };
-            document.getElementById('pwdModalTitle').innerText = "Contraseña para Importar";
-            document.getElementById('pwdModalSub').innerText = "Ingrese la contraseña admin2026 para importar un archivo Excel";
-            document.getElementById('securePasswordInput').value = "";
-            document.getElementById('pwdError').classList.add('hidden');
-            document.getElementById('passwordModal').classList.remove('hidden');
-        }
-
-        function requestClearAllAction() {
-            pendingAction = { type: 'clearAll' };
-            document.getElementById('pwdModalTitle').innerText = "Contraseña para Eliminar Todo";
-            document.getElementById('pwdModalSub').innerText = "Ingrese la contraseña admin2026 para borrar todos los registros";
-            document.getElementById('securePasswordInput').value = "";
-            document.getElementById('pwdError').classList.add('hidden');
-            document.getElementById('passwordModal').classList.remove('hidden');
-        }
-
-        function closePasswordModal() {
-            document.getElementById('passwordModal').classList.add('hidden');
-            pendingAction = null;
-        }
-
-        function handlePasswordSubmit(e) {
+        function saveItem(e) {
             e.preventDefault();
-            const pass = document.getElementById('securePasswordInput').value;
-            if (pass === 'admin2026') {
-                closePasswordModal();
-                if (pendingAction) {
-                    if (pendingAction.type === 'add') {
-                        executeOpenAddModal();
-                    } else if (pendingAction.type === 'delete') {
-                        executeDeleteRecord(pendingAction.table, pendingAction.idx);
-                    } else if (pendingAction.type === 'import') {
-                        document.getElementById('excelFileInput').click();
-                    } else if (pendingAction.type === 'clearAll') {
-                        executeClearAll();
+            const index = document.getElementById('editIndex').value;
+            const newItem = {
+                codigo: document.getElementById('codigoEquipo').value.toUpperCase(),
+                item: index === "" ? inventoryData.length + 1 : inventoryData[index].item,
+                equipo: document.getElementById('equipo').value.toUpperCase(),
+                marca: document.getElementById('marca').value.toUpperCase(),
+                modelo: document.getElementById('modelo').value.toUpperCase(),
+                serie: document.getElementById('serie').value.toUpperCase(),
+                condicion: document.getElementById('condicion').value.toUpperCase(),
+                observacion: document.getElementById('observacion').value.toUpperCase()
+            };
+
+            if (index === "") {
+                inventoryData.push(newItem);
+            } else {
+                inventoryData[index] = newItem;
+            }
+
+            saveData();
+            closeModal();
+        }
+
+        function deleteItem(index) {
+            if (confirm("¿Estás seguro de eliminar este registro?")) {
+                inventoryData.splice(index, 1);
+                inventoryData.forEach((el, i) => el.item = i + 1);
+                saveData();
+            }
+        }
+
+        function openBajaModal(sourceIndex = null) {
+            const nextCode = "ACT-BAJA-2026-" + String(bajaData.length + 1).padStart(3, '0');
+            const today = new Date().toISOString().split('T')[0];
+
+            document.getElementById('bajaCodigoActa').value = nextCode;
+            document.getElementById('bajaFecha').value = today;
+            document.getElementById('bajaSourceIndex').value = sourceIndex !== null ? sourceIndex : "";
+
+            if (sourceIndex !== null) {
+                const item = inventoryData[sourceIndex];
+                document.getElementById('bajaCodigoEquipoInput').value = item.codigo || ("EQ-2026-" + String(sourceIndex + 1).padStart(3, '0'));
+                document.getElementById('bajaEquipo').value = item.equipo || '';
+                document.getElementById('bajaMarca').value = item.marca || '';
+                document.getElementById('bajaModelo').value = item.modelo || '';
+                document.getElementById('bajaSerie').value = item.serie || '';
+                document.getElementById('bajaEstadoFisico').value = item.condicion || 'MALO';
+                document.getElementById('bajaDiagnostico').value = item.observacion ? "Falla reportada: " + item.observacion : "Falla mecánica/electrónica irrecuperable.";
+            } else {
+                document.getElementById('bajaCodigoEquipoInput').value = "EQ-2026-000";
+                document.getElementById('bajaEquipo').value = '';
+                document.getElementById('bajaMarca').value = '';
+                document.getElementById('bajaModelo').value = '';
+                document.getElementById('bajaSerie').value = '';
+                document.getElementById('bajaEstadoFisico').value = 'MALO';
+                document.getElementById('bajaDiagnostico').value = '';
+            }
+
+            document.getElementById('bajaModal').classList.remove('hidden');
+        }
+
+        function closeBajaModal() {
+            document.getElementById('bajaModal').classList.add('hidden');
+        }
+
+        function confirmarBaja(e) {
+            e.preventDefault();
+            const sourceIndex = document.getElementById('bajaSourceIndex').value;
+            const selectedMotivo = document.querySelector('input[name="motivoBaja"]:checked').value;
+
+            const bajaRecord = {
+                codigoActa: document.getElementById('bajaCodigoActa').value,
+                codigoEquipo: document.getElementById('bajaCodigoEquipoInput').value.toUpperCase(),
+                fecha: document.getElementById('bajaFecha').value,
+                area: document.getElementById('bajaArea').value,
+                ubicacion: document.getElementById('bajaUbicacion').value,
+                solicitadoPor: document.getElementById('bajaSolicitadoPor').value,
+                cargo: document.getElementById('bajaCargo').value,
+                equipo: document.getElementById('bajaEquipo').value.toUpperCase(),
+                marca: document.getElementById('bajaMarca').value.toUpperCase(),
+                modelo: document.getElementById('bajaModelo').value.toUpperCase(),
+                serie: document.getElementById('bajaSerie').value.toUpperCase(),
+                procesador: document.getElementById('bajaProcesador').value,
+                ram: document.getElementById('bajaRam').value,
+                estadoFisico: document.getElementById('bajaEstadoFisico').value,
+                motivo: selectedMotivo,
+                diagnostico: document.getElementById('bajaDiagnostico').value,
+                formateo: document.getElementById('bajaFormateo').value,
+                destino: document.getElementById('bajaDestino').value
+            };
+
+            bajaData.push(bajaRecord);
+
+            if (sourceIndex !== "") {
+                inventoryData.splice(sourceIndex, 1);
+                inventoryData.forEach((el, i) => el.item = i + 1);
+            }
+
+            saveData();
+            closeBajaModal();
+            alert("¡Equipo dado de baja y Acta registrada correctamente!");
+            switchTab('baja');
+        }
+
+        function verActa(bajaIndex) {
+            const baja = bajaData[bajaIndex];
+            document.getElementById('bajaCodigoActa').value = baja.codigoActa;
+            document.getElementById('bajaCodigoEquipoInput').value = baja.codigoEquipo || '';
+            document.getElementById('bajaFecha').value = baja.fecha;
+            document.getElementById('bajaArea').value = baja.area;
+            document.getElementById('bajaUbicacion').value = baja.ubicacion;
+            document.getElementById('bajaSolicitadoPor').value = baja.solicitadoPor;
+            document.getElementById('bajaCargo').value = baja.cargo;
+            document.getElementById('bajaEquipo').value = baja.equipo;
+            document.getElementById('bajaMarca').value = baja.marca;
+            document.getElementById('bajaModelo').value = baja.modelo;
+            document.getElementById('bajaSerie').value = baja.serie;
+            document.getElementById('bajaProcesador').value = baja.procesador;
+            document.getElementById('bajaRam').value = baja.ram;
+            document.getElementById('bajaEstadoFisico').value = baja.estadoFisico;
+            document.getElementById('bajaDiagnostico').value = baja.diagnostico;
+            document.getElementById('bajaFormateo').value = baja.formateo;
+            document.getElementById('bajaDestino').value = baja.destino;
+            document.getElementById('bajaSourceIndex').value = "";
+
+            document.getElementById('bajaModal').classList.remove('hidden');
+        }
+
+        function generateStyledWorkbook() {
+            const exportData = inventoryData.map((item, idx) => ({
+                "ITEM": item.item || (idx + 1),
+                "CODIGO EQUIPO": item.codigo || ("EQ-2026-" + String(idx + 1).padStart(3, '0')),
+                "EQUIPO / OBJETO": item.equipo || '',
+                "MARCA": item.marca || '',
+                "MODELO": item.modelo || '',
+                "SERIE": item.serie || 'S/N',
+                "CONDICION": item.condicion || '',
+                "OBSERVACION": item.observacion || ''
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+            worksheet['!cols'] = [
+                { wch: 5 },  
+                { wch: 20 }, 
+                { wch: 18 }, 
+                { wch: 14 }, 
+                { wch: 27 }, 
+                { wch: 24 }, 
+                { wch: 25 }, 
+                { wch: 81 }  
+            ];
+
+            const range = XLSX.utils.decode_range(worksheet['!ref']);
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cell_address = XLSX.utils.encode_cell({ r: R, c: C });
+                    if (!worksheet[cell_address]) continue;
+
+                    if (R === 0) {
+                        worksheet[cell_address].s = {
+                            fill: { fgColor: { rgb: "1E1B4B" } },
+                            font: { color: { rgb: "FFFFFF" }, bold: true, sz: 11, name: "Calibri" },
+                            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                            border: {
+                                top: { style: "thin", color: { rgb: "000000" } },
+                                bottom: { style: "medium", color: { rgb: "000000" } },
+                                left: { style: "thin", color: { rgb: "000000" } },
+                                right: { style: "thin", color: { rgb: "000000" } }
+                            }
+                        };
+                    } else {
+                        const isEven = R % 2 === 0;
+                        worksheet[cell_address].s = {
+                            fill: { fgColor: { rgb: isEven ? "F8FAFC" : "FFFFFF" } },
+                            font: { color: { rgb: "000000" }, sz: 10, name: "Calibri" },
+                            alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                            border: {
+                                top: { style: "thin", color: { rgb: "E2E8F0" } },
+                                bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+                                left: { style: "thin", color: { rgb: "E2E8F0" } },
+                                right: { style: "thin", color: { rgb: "E2E8F0" } }
+                            }
+                        };
                     }
                 }
-            } else {
-                document.getElementById('pwdError').classList.remove('hidden');
             }
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Inventario 2026");
+            return workbook;
         }
 
-        function executeClearAll() {
-            if (confirm("¿Está seguro de que desea ELIMINAR TODOS los registros de la tabla seleccionada actualmente?")) {
-                if (currentActiveTab === 'tabla1') {
-                    dataTabla1 = [];
-                } else {
-                    dataTabla2 = [];
-                }
-                renderTables();
-                guardarTodo();
-                alert("Se han borrado todos los registros de la sección actual.");
-            }
+        function exportExcel() {
+            const workbook = generateStyledWorkbook();
+            XLSX.writeFile(workbook, "INVENTARIO_2026_ACTUALIZADO.xlsx");
         }
 
-        // FUNCIONES DE IMPORTAR EXCEL
-        function procesarArchivoExcel(event) {
+        function importExcel(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
 
-                    if (!jsonData || jsonData.length === 0) {
-                        alert("El archivo Excel no contiene datos procesables.");
-                        return;
-                    }
+                inventoryData = json.map((row, index) => ({
+                    codigo: row["CODIGO EQUIPO"] || row.CODIGO || row.codigo || ("EQ-2026-" + String(index + 1).padStart(3, '0')),
+                    item: row["ITEM"] || row.ITEM || row.item || (index + 1),
+                    equipo: row["EQUIPO / OBJETO"] || row.EQUIPO || row.equipo || '',
+                    marca: row["MARCA"] || row.marca || '',
+                    modelo: row["MODELO"] || row.modelo || '',
+                    serie: row["SERIE"] || row.serie || '',
+                    condicion: row["CONDICION"] || row.condicion || '',
+                    observacion: row["OBSERVACION"] || row.observacion || ''
+                }));
 
-                    let importedRows = [];
-                    let startItem = 1;
-
-                    jsonData.forEach((row) => {
-                        if (row && row.length >= 2) {
-                            const col0 = String(row[0] || '').trim();
-                            const col1 = String(row[1] || '').trim();
-
-                            if (col0.includes('IEP') || col0.includes('INVENTARIO') || col0.includes('ACCESORIOS') || col0.includes('Mes/Año') || col0.toUpperCase() === 'ITEM') {
-                                return;
-                            }
-
-                            if (col1 !== '') {
-                                if (currentActiveTab === 'tabla1') {
-                                    importedRows.push({
-                                        item: startItem++,
-                                        col2: col1,
-                                        col3: String(row[2] || '').trim(),
-                                        col4: String(row[3] || '').trim(),
-                                        col5: String(row[4] || '').trim(),
-                                        col6: String(row[5] || 'REGULAR-FUNCIONANDO').trim(),
-                                        col7: String(row[6] || '').trim()
-                                    });
-                                } else {
-                                    importedRows.push({
-                                        item: startItem++,
-                                        col2: col1,
-                                        col3: String(row[2] || '').trim(),
-                                        col4: String(row[3] || '1').trim(),
-                                        col5: String(row[4] || 'BUENO').trim(),
-                                        col6: String(row[5] || '').trim()
-                                    });
-                                }
-                            }
-                        }
-                    });
-
-                    if (importedRows.length === 0) {
-                        alert("No se encontraron registros válidos de inventario en el archivo Excel.");
-                        return;
-                    }
-
-                    if (confirm(`Se encontraron ${importedRows.length} registros en el Excel. ¿Desea Reemplazar (Aceptar) o Anexar (Cancelar) a la tabla actual?`)) {
-                        if (currentActiveTab === 'tabla1') dataTabla1 = importedRows;
-                        else dataTabla2 = importedRows;
-                    } else {
-                        if (currentActiveTab === 'tabla1') {
-                            let maxItem = dataTabla1.length;
-                            importedRows.forEach(r => { r.item = ++maxItem; dataTabla1.push(r); });
-                        } else {
-                            let maxItem = dataTabla2.length;
-                            importedRows.forEach(r => { r.item = ++maxItem; dataTabla2.push(r); });
-                        }
-                    }
-
-                    renderTables();
-                    guardarTodo();
-                    alert(`¡Excel importado correctamente! Se actualizaron ${importedRows.length} registros.`);
-
-                } catch (err) {
-                    console.error(err);
-                    alert("Ocurrió un error al leer el archivo Excel. Asegúrese de que sea un archivo .xlsx, .xls o .csv válido.");
-                }
+                saveData();
+                alert("¡Inventario importado con éxito!");
             };
             reader.readAsArrayBuffer(file);
-            event.target.value = '';
         }
 
-        function guardarCabecera() {
-            const mes = document.getElementById('headerMesAnio').value;
-            const resp = document.getElementById('headerPersonal').value;
-            localStorage.setItem('inv_rosario_mes', mes);
-            localStorage.setItem('inv_rosario_resp', resp);
-            alert("¡Datos de Cabecera guardados correctamente!");
-        }
+        function uploadToDrive() {
+            const workbook = generateStyledWorkbook();
+            XLSX.writeFile(workbook, "INVENTARIO_2026_DRIVE.xlsx");
 
-        function guardarTodo() {
-            localStorage.setItem('inv_rosario_tabla1', JSON.stringify(dataTabla1));
-            localStorage.setItem('inv_rosario_tabla2', JSON.stringify(dataTabla2));
-            guardarCabecera();
-            alert("¡Todos los cambios del inventario han sido guardados exitosamente!");
-        }
-
-        function executeOpenAddModal() {
-            document.getElementById('modalTitle').innerText = "Agregar Nuevo Registro";
-            document.getElementById('recordForm').reset();
-            document.getElementById('editIndex').value = "";
-            document.getElementById('formTableType').value = currentActiveTab;
-            document.getElementById('formTableType').disabled = false;
-            toggleFormFields();
-            
-            const targetArr = currentActiveTab === 'tabla1' ? dataTabla1 : dataTabla2;
-            document.getElementById('formItem').value = targetArr.length + 1;
-            
-            document.getElementById('recordModal').classList.remove('hidden');
-        }
-
-        function closeAddModal() {
-            document.getElementById('recordModal').classList.add('hidden');
-        }
-
-        function toggleFormFields() {
-            const tType = document.getElementById('formTableType').value;
-            const labelCol2 = document.getElementById('labelCol2');
-            const labelCol3 = document.getElementById('labelCol3');
-            const labelCol4 = document.getElementById('labelCol4');
-            const labelCol5 = document.getElementById('labelCol5');
-            const labelCol6 = document.getElementById('labelCol6');
-            const groupCol4 = document.getElementById('groupCol4');
-            const groupCol5 = document.getElementById('groupCol5');
-
-            if (tType === 'tabla1') {
-                labelCol2.innerText = "Equipo";
-                labelCol3.innerText = "Marca";
-                labelCol4.innerText = "Modelo";
-                labelCol5.innerText = "N° Serie";
-                labelCol6.innerText = "Condición";
-                groupCol4.style.display = "block";
-                groupCol5.style.display = "block";
-                document.getElementById('formCol4').required = false;
-                document.getElementById('formCol5').required = false;
-            } else {
-                labelCol2.innerText = "Equipo o Objeto";
-                labelCol3.innerText = "Marca y Modelo";
-                labelCol4.innerText = "Cantidad";
-                labelCol5.innerText = "Condición";
-                labelCol6.innerText = "Observación (Extra)";
-                groupCol4.style.display = "block";
-                groupCol5.style.display = "block";
-                document.getElementById('formCol4').required = true;
-                document.getElementById('formCol5').required = true;
+            const driveUrl = "https://drive.google.com/drive/folders/1axDaRHlkugFkJXXbB7dFzKKABRLnaH7z?usp=sharing";
+            if (confirm("Se ha generado el archivo Excel con el formato, centrado y anchos de columna actualizados ('INVENTARIO_2026_DRIVE.xlsx').\n\n¿Deseas abrir la carpeta de Google Drive para subirlo?")) {
+                window.open(driveUrl, '_blank');
             }
         }
 
-        function editRecord(table, idx) {
-            document.getElementById('modalTitle').innerText = "Editar Registro";
-            document.getElementById('editIndex').value = idx;
-            document.getElementById('formTableType').value = table;
-            document.getElementById('formTableType').disabled = true;
-            toggleFormFields();
-
-            const row = table === 'tabla1' ? dataTabla1[idx] : dataTabla2[idx];
-            document.getElementById('formItem').value = row.item;
-            document.getElementById('formCol2').value = row.col2;
-            document.getElementById('formCol3').value = row.col3;
-            document.getElementById('formCol4').value = row.col4;
-            document.getElementById('formCol5').value = row.col5;
-            document.getElementById('formCol6').value = row.col6;
-            document.getElementById('formCol7').value = row.col7 || '';
-
-            document.getElementById('recordModal').classList.remove('hidden');
-        }
-
-        function saveRecord(e) {
-            e.preventDefault();
-            const table = document.getElementById('formTableType').value;
-            const editIdx = document.getElementById('editIndex').value;
-            
-            const newItem = {
-                item: parseInt(document.getElementById('formItem').value),
-                col2: document.getElementById('formCol2').value.trim(),
-                col3: document.getElementById('formCol3').value.trim(),
-                col4: document.getElementById('formCol4').value.trim(),
-                col5: document.getElementById('formCol5').value.trim(),
-                col6: document.getElementById('formCol6').value.trim(),
-                col7: document.getElementById('formCol7').value.trim()
-            };
-
-            const targetArr = table === 'tabla1' ? dataTabla1 : dataTabla2;
-
-            if (editIdx === "") {
-                targetArr.push(newItem);
-            } else {
-                targetArr[parseInt(editIdx)] = newItem;
-            }
-
-            renderTables();
-            closeAddModal();
-            guardarTodo();
-        }
-
-        function executeDeleteRecord(table, idx) {
-            if (table === 'tabla1') {
-                dataTabla1.splice(idx, 1);
-            } else {
-                dataTabla2.splice(idx, 1);
-            }
-            renderTables();
-            guardarTodo();
-        }
-
-        function filtrarTabla() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const tbody1 = document.getElementById('tbody1');
-            const tbody2 = document.getElementById('tbody2');
-            
-            const rows1 = tbody1.getElementsByTagName('tr');
-            for (let tr of rows1) {
-                const text = tr.innerText.toLowerCase();
-                tr.style.display = text.includes(query) ? "" : "none";
-            }
-
-            const rows2 = tbody2.getElementsByTagName('tr');
-            for (let tr of rows2) {
-                const text = tr.innerText.toLowerCase();
-                tr.style.display = text.includes(query) ? "" : "none";
-            }
-        }
-
-        // EXPORTACIÓN A EXCEL CON ESTILOS, CENTRADO Y ANCHOS
-        function exportToExcel() {
-            const mesAnio = document.getElementById('headerMesAnio').value;
-            const personal = document.getElementById('headerPersonal').value;
-
-            let html = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="utf-8">
-                <style>
-                    table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 11pt; }
-                    th, td { border: 1px solid #000000; text-align: center; vertical-align: middle; padding: 6px; }
-                    .header-blue { background-color: #1D4ED8; color: #FFFFFF; font-weight: bold; text-align: center; }
-                    .col-a { width: 60px; }
-                    .col-bcde { width: 140px; }
-                    .col-f { width: 180px; }
-                    .col-g { width: 350px; }
-                </style>
-            </head>
-            <body>
-                <h3 style="text-align:center;">IEP 20125 NUESTRA SEÑORA DEL ROSARIO</h3>
-                <h4 style="text-align:center;">INVENTARIO DE EQUIPOS TECNOLOGICOS NIVEL SECUNDARIO</h4>
-                <p style="text-align:center;"><b>Mes/Año:</b> ${mesAnio} &nbsp;&nbsp;&nbsp; <b>Responsable:</b> ${personal}</p>
-                
-                <table>
-                    <tr class="header-blue">
-                        <th class="col-a">ITEM</th>
-                        <th class="col-bcde">EQUIPO</th>
-                        <th class="col-bcde">MARCA</th>
-                        <th class="col-bcde">MODELO</th>
-                        <th class="col-bcde">SERIE</th>
-                        <th class="col-f">CONDICION</th>
-                        <th class="col-g">OBSERVACION</th>
-                    </tr>`;
-
-            dataTabla1.forEach(r => {
-                html += `<tr>
-                    <td class="col-a">${r.item}</td>
-                    <td class="col-bcde">${r.col2 || ''}</td>
-                    <td class="col-bcde">${r.col3 || ''}</td>
-                    <td class="col-bcde">${r.col4 || ''}</td>
-                    <td class="col-bcde">${r.col5 || ''}</td>
-                    <td class="col-f">${r.col6 || ''}</td>
-                    <td class="col-g">${r.col7 || ''}</td>
-                </tr>`;
-            });
-
-            html += `</table><br><br>
-                <h3 style="text-align:center;">ACCESORIOS, PERIFERICOS Y MOBILIARIO</h3>
-                <table>
-                    <tr class="header-blue">
-                        <th class="col-a">ITEM</th>
-                        <th class="col-bcde">EQUIPO O OBJETO</th>
-                        <th class="col-bcde">MARCA Y MODELO</th>
-                        <th class="col-bcde">CANTIDAD</th>
-                        <th class="col-f">CONDICION</th>
-                        <th class="col-g">OBSERVACION</th>
-                    </tr>`;
-
-            dataTabla2.forEach(r => {
-                html += `<tr>
-                    <td class="col-a">${r.item}</td>
-                    <td class="col-bcde">${r.col2 || ''}</td>
-                    <td class="col-bcde">${r.col3 || ''}</td>
-                    <td class="col-bcde">${r.col4 || ''}</td>
-                    <td class="col-f">${r.col5 || ''}</td>
-                    <td class="col-g">${r.col6 || ''}</td>
-                </tr>`;
-            });
-
-            html += `</table></body></html>`;
-
-            const blob = new Blob(['\ufeff' + html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Inventario_2026_Nuestra_Senora_del_Rosario.xls';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // REPORTE DE DAÑOS
-        function openDamageModal() {
-            document.getElementById('damagePrintMes').innerText = document.getElementById('headerMesAnio').value;
-            document.getElementById('damagePrintResp').innerText = document.getElementById('headerPersonal').value;
-            document.getElementById('damageModal').classList.remove('hidden');
-        }
-
-        function closeDamageModal() {
-            document.getElementById('damageModal').classList.add('hidden');
-        }
-
-        function initDamageGrid() {
-            const tbody = document.getElementById('damageTbody');
-            tbody.innerHTML = '';
-            for (let i = 1; i <= 8; i++) {
-                appendDamageRow(i);
-            }
-        }
-
-        function addRowDamage() {
-            const tbody = document.getElementById('damageTbody');
-            const count = tbody.rows.length + 1;
-            appendDamageRow(count);
-        }
-
-        function appendDamageRow(itemNum) {
-            const tbody = document.getElementById('damageTbody');
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-gray-50";
-            tr.innerHTML = `
-                <td class="border border-gray-300 p-1.5 text-center font-mono font-bold text-amber-900 bg-amber-50 text-xs">${itemNum}</td>
-                <td class="border border-gray-300 p-1"><input type="text" placeholder="Ej. Laptop / Proyector" class="w-full bg-transparent p-1 text-xs text-center focus:outline-none"></td>
-                <td class="border border-gray-300 p-1"><input type="text" placeholder="Ej. Lenovo / ViewSonic" class="w-full bg-transparent p-1 text-xs text-center focus:outline-none"></td>
-                <td class="border border-gray-300 p-1"><input type="text" placeholder="N° serie o placa" class="w-full bg-transparent p-1 text-xs text-center font-mono focus:outline-none"></td>
-                <td class="border border-gray-300 p-1"><input type="text" placeholder="Describa el daño o falla detalladamente..." class="w-full bg-transparent p-1 text-xs text-center focus:outline-none"></td>
-                <td class="border border-gray-300 p-1"><input type="text" placeholder="Reparación / Baja / Cambio" class="w-full bg-transparent p-1 text-xs text-center focus:outline-none"></td>
-                <td class="border border-gray-300 p-1 text-center no-print"><button onclick="this.closest('tr').remove()" class="text-red-500 hover:text-red-700 text-xs"><i class="fa-solid fa-trash"></i></button></td>
-            `;
-            tbody.appendChild(tr);
-        }
+        renderTables();
     </script>
 </body>
 </html>
