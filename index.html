@@ -178,7 +178,7 @@
             <div class="dropdown-content">
                 <button class="menu-btn" data-url="asistenciaprimaria.html">Asistencia Nivel Primario</button>
                 <button class="menu-btn" data-url="https://iepcolegio.github.io/webrosario/paginas/asistencias2.html">Asistencia Nivel Secundario</button>
-                <a href="https://iepcolegio.github.io/ASISTENCIASECUNDARIA/" target="_blank" class="menu-btn" id="qr-btn">QR Asistencia Secundaria</a>
+                <a href="https://iepcolegio.github.io/ASISTENCIASECUNDARIA/" target="_blank" class="menu-btn">QR Asistencia Secundaria</a>
             </div>
         </div>
         
@@ -191,9 +191,7 @@
             </div>
         </div>
 
-        <a href="sesiones20125.html" target="_blank" class="menu-btn">Registro de Sesiones</a>
-
-        <!-- DESPLEGABLE: FORMATO -->
+        <!-- DESPLEGABLE: FORMATOS -->
         <div class="dropdown">
             <button class="menu-btn dropdown-btn">Formatos</button>
             <div class="dropdown-content">
@@ -201,21 +199,27 @@
                 <a href="REGISTROALMUERZOSECUNDARIA.html" target="_blank" class="menu-btn">Registro Almuerzo Secundaria</a>
                 <a href="actividadalumnosprimaria.html" target="_blank" class="menu-btn">Actividad Estudiantes Primaria</a>
                 <a href="actividadalumnossecundaria.html" target="_blank" class="menu-btn">Actividad Estudiantes Secundaria</a>
-                <a href="FORMATOCOMPORTAMIENTOPRIMARIA.HTML" target="_blank" class="menu-btn">Formato comportamiento primara</a>
+                <a href="FORMATOCOMPORTAMIENTOPRIMARIA.HTML" target="_blank" class="menu-btn">Formato comportamiento primaria</a>
                 <a href="FORMATOCOMPORTAMIENTOSECUNDARIA.html" target="_blank" class="menu-btn">Formato comportamiento secundaria</a>
                 <a href="Fut.html" target="_blank" class="menu-btn">Fut virtual</a>
             </div>
         </div>
         
-        <!-- Botones normales restantes -->
-        <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas</button>
-        <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Adm.</button>
-        <button class="menu-btn" data-url="biblioteca.html">Biblioteca</button>
-        <button class="menu-btn" data-url="inventariotic.html">Inventario</button>
-        
-        <!-- Enlaces directos externos -->
-        <a href="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank" class="menu-btn" id="doc-btn">Documentos</a>
-        <a href="https://iepcolegio.github.io/almuerzos20125/" target="_blank" class="menu-btn" id="qr-btn">Registro de Almuerzos</a>
+        <!-- NUEVO DESPLEGABLE: GESTIÓN Y ADMINISTRATIVO (Solicitado) -->
+        <div class="dropdown">
+            <button class="menu-btn dropdown-btn">Gestión y Administrativo</button>
+            <div class="dropdown-content">
+                <button class="menu-btn" data-url="REGISTROBOLETAS.html">Boletas de Asistencia Personal</button>
+                <button class="menu-btn" data-url="ASISTENCIAPERSONAL.html">Asistencia Personal y Adm.</button>
+                <button class="menu-btn" data-url="biblioteca.html">Administración de Biblioteca</button>
+                <button class="menu-btn" data-url="inventariotic.html">Inventario</button>
+                <a href="https://sites.google.com/view/archivosdocumentos?usp=sharing" target="_blank" class="menu-btn">Documentos</a>
+            </div>
+        </div>
+
+        <!-- Botones directos restantes -->
+        <button class="menu-btn" data-url="sesiones20125.html">Registro de Sesiones</button>
+        <a href="https://iepcolegio.github.io/almuerzos20125/" target="_blank" class="menu-btn">Registro de Almuerzos</a>
     </nav>
 
     <!-- Área Derecha -->
@@ -259,15 +263,15 @@
                 dropdown.classList.toggle('open');
             });
         });
+
+        // Validación de acceso por contraseña
+        var getin = prompt("Acceso a Documentos administrativos");
+        if (getin !== "Rosario-20125") {
+            location.href = "index.html";
+        } else {
+            alert("Contraseña correcta, acepta para ver la entrada");
+        }
     </script>
 
 </body>
 </html>
-
-<script>
-var getin = prompt("Acceso a Documentos administrativos")
-if (getin!="Rosario-20125")
-{location.href="index.html"}
-else
-{alert("Contraseña correcta, acepta para ver la entrada")}
-</script>
