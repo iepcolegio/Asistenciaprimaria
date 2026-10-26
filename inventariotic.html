@@ -60,7 +60,10 @@
     <div class="bg-white border-b border-slate-200 no-print">
         <div class="max-w-7xl mx-auto px-4 flex gap-6 text-sm font-semibold">
             <button id="tabActiveBtn" onclick="switchTab('active')" class="py-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center">
-                <i class="fa-solid fa-boxes-stacked mr-2"></i> Equipos Activos (<span id="countActiveTab">0</span>)
+                <i class="fa-solid fa-boxes-stacked mr-2"></i> Todos los Activos (<span id="countActiveTab">0</span>)
+            </button>
+            <button id="tabNuevosBtn" onclick="switchTab('nuevos')" class="py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center">
+                <i class="fa-solid fa-sparkles mr-2 text-emerald-500"></i> Comprados Este Año (<span id="countNuevosTab">0</span>)
             </button>
             <button id="tabBajaBtn" onclick="switchTab('baja')" class="py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center">
                 <i class="fa-solid fa-ban mr-2"></i> Equipos Dadas de Baja (<span id="countBajaTab">0</span>)
@@ -71,19 +74,30 @@
     <!-- Contenido Principal -->
     <main class="max-w-7xl mx-auto px-4 py-8">
         
-        <!-- Pestaña 1: Equipos Activos -->
+        <!-- Pestañas de Activos (Todos / Comprados Este Año) -->
         <div id="viewActive">
             <div class="bg-white rounded-xl shadow-sm p-6 mb-6 no-print">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
                     <div>
-                        <span class="text-xs font-semibold text-slate-400 uppercase">Total Activos</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase" id="titleCount">Total Mostrados</span>
                         <h2 id="totalCount" class="text-3xl font-extrabold text-indigo-900">0</h2>
                     </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Filtrar por Año</label>
+                        <select id="yearFilter" onchange="filterTable()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="ALL">Todos los años</option>
+                            <option value="2026">Comprados en 2026</option>
+                            <option value="ANTERIORES">Anteriores a 2026</option>
+                        </select>
+                    </div>
                     <div class="md:col-span-2 relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-search"></i>
-                        </span>
-                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por código, equipo, marca, modelo, serie..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Búsqueda rápida</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por código, equipo, marca, modelo, serie, año..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,6 +113,7 @@
                                 <th class="py-3 px-4 font-bold text-center">Marca</th>
                                 <th class="py-3 px-4 font-bold text-center">Modelo</th>
                                 <th class="py-3 px-4 font-bold text-center">Serie</th>
+                                <th class="py-3 px-4 font-bold text-center">Año Compra</th>
                                 <th class="py-3 px-4 font-bold text-center">Condición</th>
                                 <th class="py-3 px-4 font-bold text-center">Observación</th>
                                 <th class="py-3 px-4 font-bold text-center no-print">Acciones</th>
@@ -148,9 +163,15 @@
             </div>
             <form id="itemForm" onsubmit="saveItem(event)">
                 <input type="hidden" id="editIndex">
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Código de Equipo</label>
-                    <input type="text" id="codigoEquipo" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" placeholder="Ej. EQ-2026-001">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Código de Equipo</label>
+                        <input type="text" id="codigoEquipo" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" placeholder="Ej. EQ-2026-001">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Año de Compra</label>
+                        <input type="number" id="anioCompra" min="2000" max="2099" value="2026" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -336,91 +357,28 @@
     </div>
 
     <script>
+        const CURRENT_YEAR = 2026; // Año actual para filtrado rápido
+
         let inventoryData = [
-            {"item": 1, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "THINKPAD", "serie": "", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 2, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "G485", "serie": "CB25098475", "condicion": "MALOGRADO", "observacion": "PLACA Y DISCO DURO MALOGRADO PARA DAR DE BAJA"},
-            {"item": 3, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009246", "condicion": "REGULAR-FUNCIONANDO", "observacion": "A CARGO DEL CIST"},
-            {"item": 4, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009270", "condicion": "REGULAR-FUNCIONANDO", "observacion": "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO"},
-            {"item": 5, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16116Q", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 6, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1617RC", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 7, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16171K", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA RAJADA PHAT MALOGRADO"},
-            {"item": 8, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615CD", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 9, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP162TP2", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
-            {"item": 10, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1612A5", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 11, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WOE", "condicion": "REGULAR -FUNCIONANDO", "observacion": ""},
-            {"item": 12, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16411J3", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BOTONES SALIDOS"},
-            {"item": 13, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16181B", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
-            {"item": 14, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164354", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO MALOGRADO SIN MAUSE"},
-            {"item": 15, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1610T0", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
-            {"item": 16, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1616ZK", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA SIN SEÑAL DE VIDEO Y TECLADO MALOGRADO"},
-            {"item": 17, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615EM", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA TECLADO Y PAHT MALOGRADO"},
-            {"item": 18, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615F5", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 19, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP160ZJU", "condicion": "REGULAR-FUNCIONANDO", "observacion": "TECLADO Y PAHT MALOGRADOS"},
-            {"item": 20, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE7490", "serie": "740805009666", "condicion": "REGULAR-FUNCIONANDO", "observacion": "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO"},
-            {"item": 21, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1623YT", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 22, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164W8H", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 23, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164224", "condicion": "MALOGRADO -INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
-            {"item": 24, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164X94", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BOTONES DE TECLADO SALIDO"},
-            {"item": 25, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1613DM", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS BONES DE TECLADO SALIDO"},
-            {"item": 26, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1641LK", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 27, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-81", "serie": "MP16151D", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 28, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1611M", "condicion": "REGULAR-FUNCIONANDO", "observacion": "ALGUNOS 2QBOTONES MALGRADOS"},
-            {"item": 29, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WKS", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
-            {"item": 30, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP164WJM", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP"},
-            {"item": 31, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16172T", "condicion": "MALOGRADO-NO ARRANCA", "observacion": "NO ENCIENDE"},
-            {"item": 32, "equipo": "LAPTOP", "marca": "COMPAQ", "modelo": "NO TIENE", "serie": "CND8150150", "condicion": "MALOGRADO-NO ARRANCA", "observacion": "NO ENCIENDE PLANCA MALOGRADA Y DISCO DURO DAR DE BAJA"},
-            {"item": 33, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1617HE", "condicion": "REGULAR-FUNCIONANDO", "observacion": ""},
-            {"item": 34, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002959", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
-            {"item": 35, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0R183602706", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
-            {"item": 36, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002942", "condicion": "MALOGRADO", "observacion": "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO"},
-            {"item": 37, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002940", "condicion": "MALOGRADO", "observacion": "FOCO Y BOMBILLA MALOGRADO"},
-            {"item": 38, "equipo": "PROYECTOR", "marca": "VIEWSONIC PA503W", "modelo": "VS16907", "serie": "V0T192002972", "condicion": "MALOGRADO", "observacion": "ESTABILIZADOR DE TEMPERATURA Y FOCO MALOGRADO"},
-            {"item": 39, "equipo": "PROYECTOR", "marca": "EPSON", "modelo": "H430A", "serie": "PSPK1901094", "condicion": "MALOGRADO", "observacion": "FOCO BOMBILLA QUEMADOS"},
-            {"item": 40, "equipo": "PROYECTOR", "marca": "EPSON", "modelo": "V11H743021", "serie": "", "condicion": "FUNCIONANDO", "observacion": "PROYECTOR DE PARED EN EL AULA DE EPT"},
-            {"item": 41, "equipo": "TECLADO", "marca": "MICROSOFT", "modelo": "I366", "serie": "66903641048", "condicion": "MALOGRADO", "observacion": "PARA DAR DE BAJA"},
-            {"item": 42, "equipo": "TECLADO", "marca": "DELL", "modelo": "KB2161", "serie": "SIN SERIE", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 43, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3412K1081102", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 44, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3371K1080297", "condicion": "FUNCIONANDO", "observacion": "NO FUNCIONA TECLAS MALOGRADAS"},
-            {"item": 45, "equipo": "TECLADO", "marca": "CYBERTEL", "modelo": "CYBK108", "serie": "3371K1080299", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 46, "equipo": "TECLADO", "marca": "GENIUS", "modelo": "GK-070006/U", "serie": "YB44C1U13124", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 47, "equipo": "TECLADO", "marca": "GENIUS", "modelo": "GK-10006L5", "serie": "XEC407016806", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 48, "equipo": "CARGADORES DE LAPTOP", "marca": "DELL-HA65NM130", "modelo": "2 UNIDADES", "serie": "1 BUENO / 1 MALOGRADO", "condicion": "MIXTO", "observacion": ""},
-            {"item": 49, "equipo": "CARGADORES DE LAPTOP", "marca": "THINK PAD", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
-            {"item": 50, "equipo": "CARGADORES DE LAPTOP", "marca": "LENOVO", "modelo": "22 UNIDADES", "serie": "17 BUENOS / 5 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
-            {"item": 51, "equipo": "ESTABILIZADORES", "marca": "FORZA", "modelo": "4 UNIDADES", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 52, "equipo": "ESTABILIZADORES", "marca": "ORION", "modelo": "4 UNIDADES", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 53, "equipo": "ESTABILIZADORES", "marca": "OMEGA", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "FUNCIONANDO", "observacion": ""},
-            {"item": 54, "equipo": "SILLAS", "marca": "MADERA", "modelo": "24 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
-            {"item": 55, "equipo": "MESAS", "marca": "VERDE", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
-            {"item": 56, "equipo": "PIZARRA", "marca": "ACRILICA", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "REGULAR", "observacion": ""},
-            {"item": 57, "equipo": "MOUSE", "marca": "LOGITECH", "modelo": "13 UNIDADES", "serie": "12 BUENOS / 1 MALOGRADO", "condicion": "MIXTO", "observacion": ""},
-            {"item": 58, "equipo": "MOUSE", "marca": "GENIUS", "modelo": "8 UNIDADES", "serie": "6 USB / 2 CIRCULAR PC", "condicion": "BUENO", "observacion": ""},
-            {"item": 59, "equipo": "MOUSE", "marca": "DELL-HA65NM130", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
-            {"item": 60, "equipo": "MESAS", "marca": "ACRILICAS Y MADERA", "modelo": "20 UNIDADES", "serie": "BUENOS", "condicion": "BUENO", "observacion": ""},
-            {"item": 61, "equipo": "PANTALLAS", "marca": "LG", "modelo": "5 UNIDADES", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
-            {"item": 62, "equipo": "PANTALLAS", "marca": "DELL", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "BUENO", "observacion": ""},
-            {"item": 63, "equipo": "PANTALLAS", "marca": "LG", "modelo": "2 UNIDADES", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
-            {"item": 64, "equipo": "PANTALLAS", "marca": "PHILIPS", "modelo": "1 UNIDAD", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
-            {"item": 65, "equipo": "PANTALLAS", "marca": "AOC", "modelo": "1 UNIDAD", "serie": "INOPERATIVO", "condicion": "MALOGRADO", "observacion": ""},
-            {"item": 66, "equipo": "ROUTER", "marca": "WOW", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "BUENO", "observacion": ""},
-            {"item": 67, "equipo": "ACCESS POINT", "marca": "TP-LINK", "modelo": "1 UNIDAD", "serie": "OPERATIVO", "condicion": "BUENO", "observacion": ""},
-            {"item": 68, "equipo": "GABINETE BITEL", "marca": "BITEL", "modelo": "1 UNIDAD", "serie": "BUENO", "condicion": "OPERANDO INTERNET", "observacion": ""},
-            {"item": 69, "equipo": "CABLE DE ENERGIA", "marca": "GENERICO", "modelo": "16 UNIDADES", "serie": "13 REGULAR / 3 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
-            {"item": 70, "equipo": "CABLE VGA", "marca": "GENERICO", "modelo": "11 UNIDADES", "serie": "9 REGULAR / 2 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
-            {"item": 71, "equipo": "CARTUCHERAS", "marca": "EPSON", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "CON 7 PLUMONES EPSON DENTRO"},
-            {"item": 72, "equipo": "CONTROL", "marca": "ECRAM", "modelo": "6 UNIDADES", "serie": "3 OPERATIVOS / 3 MALOGRADOS", "condicion": "MIXTO", "observacion": ""},
-            {"item": 73, "equipo": "CONTROL", "marca": "VIEW SONIC", "modelo": "4 UNIDADES", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "DE PROYECTORES"},
-            {"item": 74, "equipo": "CONTROL", "marca": "EPSON", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "REGULAR", "observacion": "DE PROYECTOR DE PARED"},
-            {"item": 75, "equipo": "ROUTER", "marca": "LB-LINK", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "OPERATIVO", "observacion": ""},
-            {"item": 76, "equipo": "MODEM", "marca": "VELOX", "modelo": "1 UNIDAD", "serie": "REGULAR", "condicion": "DE FIBRA OPTICA", "observacion": ""}
+            {"item": 1, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "THINKPAD", "serie": "", "condicion": "REGULAR-FUNCIONANDO", "observacion": "", "anioCompra": 2024},
+            {"item": 2, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "G485", "serie": "CB25098475", "condicion": "MALOGRADO", "observacion": "PLACA Y DISCO DURO MALOGRADO PARA DAR DE BAJA", "anioCompra": 2023},
+            {"item": 3, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009246", "condicion": "REGULAR-FUNCIONANDO", "observacion": "A CARGO DEL CIST", "anioCompra": 2025},
+            {"item": 4, "equipo": "LAPTOP", "marca": "DELL", "modelo": "LATITUDE 7490", "serie": "740805009270", "condicion": "REGULAR-FUNCIONANDO", "observacion": "DISCO DURO MALOGRADO PUEDE REPARASE CAMBIANDO EL DISCO DURO", "anioCompra": 2026},
+            {"item": 5, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16116Q", "condicion": "REGULAR-FUNCIONANDO", "observacion": "", "anioCompra": 2026},
+            {"item": 6, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1617RC", "condicion": "REGULAR-FUNCIONANDO", "observacion": "", "anioCompra": 2024},
+            {"item": 7, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP16171K", "condicion": "REGULAR-FUNCIONANDO", "observacion": "PANTALLA RAJADA PHAT MALOGRADO", "anioCompra": 2025},
+            {"item": 8, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1615CD", "condicion": "REGULAR-FUNCIONANDO", "observacion": "", "anioCompra": 2026},
+            {"item": 9, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP162TP2", "condicion": "MALOGRADO - INOPERATIVO", "observacion": "NO ARRANCA PLACA MALOGRADA SE USO SUS PIEZAS INTERNAS PARA EL FUNCIONAMIENTO DE OTRAS LAPTOP", "anioCompra": 2022},
+            {"item": 10, "equipo": "LAPTOP", "marca": "LENOVO", "modelo": "B50-80", "serie": "MP1612A5", "condicion": "REGULAR-FUNCIONANDO", "observacion": "", "anioCompra": 2026}
         ];
 
         let bajaData = [];
+        let currentTabMode = 'active'; // 'active', 'nuevos', 'baja'
 
+        // Asegurar campos iniciales
         inventoryData.forEach((item, idx) => {
-            if (!item.codigo) {
-                item.codigo = "EQ-2026-" + String(idx + 1).padStart(3, '0');
-            }
+            if (!item.codigo) item.codigo = "EQ-2026-" + String(idx + 1).padStart(3, '0');
+            if (!item.anioCompra) item.anioCompra = 2025; // Por defecto si no existe
         });
 
         if (localStorage.getItem('inventory_2026_data')) {
@@ -443,32 +401,51 @@
         }
 
         function switchTab(tab) {
+            currentTabMode = tab;
             const activeDiv = document.getElementById('viewActive');
             const bajaDiv = document.getElementById('viewBaja');
             const activeBtn = document.getElementById('tabActiveBtn');
+            const nuevosBtn = document.getElementById('tabNuevosBtn');
             const bajaBtn = document.getElementById('tabBajaBtn');
+            const yearFilter = document.getElementById('yearFilter');
+
+            // Reset tab styles
+            activeBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center";
+            nuevosBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center";
+            bajaBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center";
 
             if (tab === 'active') {
                 activeDiv.classList.remove('hidden');
                 bajaDiv.classList.add('hidden');
-                activeBtn.className = "py-3 border-b-2 border-indigo-600 text-indigo-600 font-semibold flex items-center";
-                bajaBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold flex items-center";
+                activeBtn.className = "py-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center";
+                yearFilter.value = 'ALL';
+            } else if (tab === 'nuevos') {
+                activeDiv.classList.remove('hidden');
+                bajaDiv.classList.add('hidden');
+                nuevosBtn.className = "py-3 border-b-2 border-emerald-600 text-emerald-600 flex items-center";
+                yearFilter.value = CURRENT_YEAR.toString();
             } else {
                 activeDiv.classList.add('hidden');
                 bajaDiv.classList.remove('hidden');
-                activeBtn.className = "py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-semibold flex items-center";
-                bajaBtn.className = "py-3 border-b-2 border-rose-600 text-rose-600 font-semibold flex items-center";
+                bajaBtn.className = "py-3 border-b-2 border-rose-600 text-rose-600 flex items-center";
             }
+
+            filterTable();
         }
 
-        function renderTables(data = inventoryData) {
+        function renderTables(dataToShow = null) {
+            const data = dataToShow || inventoryData;
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
+            
             document.getElementById('totalCount').innerText = data.length;
             document.getElementById('countActiveTab').innerText = inventoryData.length;
+            
+            const nuevosCount = inventoryData.filter(i => Number(i.anioCompra) === CURRENT_YEAR).length;
+            document.getElementById('countNuevosTab').innerText = nuevosCount;
 
             if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400">No hay equipos activos.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">No se encontraron equipos para este filtro.</td></tr>`;
             } else {
                 data.forEach((item, index) => {
                     let badgeColor = "bg-green-100 text-green-800";
@@ -478,8 +455,13 @@
                         badgeColor = "bg-yellow-100 text-yellow-800";
                     }
 
+                    const isNuevo = Number(item.anioCompra) === CURRENT_YEAR;
+                    const yearBadge = isNuevo 
+                        ? `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold text-xs"><i class="fa-solid fa-star text-[10px] mr-1"></i>${item.anioCompra || CURRENT_YEAR}</span>`
+                        : `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold text-xs">${item.anioCompra || 'N/A'}</span>`;
+
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                    tr.className = `hover:bg-slate-50 transition border-b border-slate-100 ${isNuevo ? 'bg-emerald-50/30' : ''}`;
                     tr.innerHTML = `
                         <td class="py-3 px-4 font-semibold text-slate-500 text-center">${item.item || (index + 1)}</td>
                         <td class="py-3 px-4 font-mono font-bold text-indigo-700 text-xs text-center">${item.codigo || ('EQ-2026-' + String(index+1).padStart(3, '0'))}</td>
@@ -487,15 +469,16 @@
                         <td class="py-3 px-4 text-center">${item.marca || ''}</td>
                         <td class="py-3 px-4 text-center">${item.modelo || ''}</td>
                         <td class="py-3 px-4 font-mono text-xs text-center">${item.serie || 'S/N'}</td>
+                        <td class="py-3 px-4 text-center">${yearBadge}</td>
                         <td class="py-3 px-4 text-center"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${item.condicion || 'BUENO'}</span></td>
                         <td class="py-3 px-4 text-slate-500 text-xs text-center">${item.observacion || '-'}</td>
                         <td class="py-3 px-4 text-center no-print">
                             <div class="flex items-center justify-center gap-1">
-                                <button onclick="openBajaModal(${index})" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-xs font-semibold flex items-center" title="Dar de Baja">
+                                <button onclick="openBajaModal(${inventoryData.indexOf(item)})" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-2 py-1 rounded text-xs font-semibold flex items-center" title="Dar de Baja">
                                     <i class="fa-solid fa-file-circle-xmark mr-1"></i> Baja
                                 </button>
-                                <button onclick="editItem(${index})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                                <button onclick="deleteItem(${index})" class="text-red-600 hover:text-red-800 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                                <button onclick="editItem(${inventoryData.indexOf(item)})" class="text-blue-600 hover:text-blue-800 p-1" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button onclick="deleteItem(${inventoryData.indexOf(item)})" class="text-red-600 hover:text-red-800 p-1" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </td>
                     `;
@@ -503,6 +486,7 @@
                 });
             }
 
+            // Renderizar Baja
             const tbodyBaja = document.getElementById('tableBajaBody');
             tbodyBaja.innerHTML = '';
             document.getElementById('bajaCount').innerText = bajaData.length;
@@ -535,9 +519,21 @@
 
         function filterTable() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = inventoryData.filter(item => 
-                Object.values(item).some(val => String(val).toLowerCase().includes(query))
-            );
+            const yearVal = document.getElementById('yearFilter').value;
+
+            let filtered = inventoryData.filter(item => {
+                const matchesQuery = Object.values(item).some(val => String(val).toLowerCase().includes(query));
+                
+                let matchesYear = true;
+                if (yearVal === '2026') {
+                    matchesYear = Number(item.anioCompra) === CURRENT_YEAR;
+                } else if (yearVal === 'ANTERIORES') {
+                    matchesYear = Number(item.anioCompra) < CURRENT_YEAR || !item.anioCompra;
+                }
+
+                return matchesQuery && matchesYear;
+            });
+
             renderTables(filtered);
         }
 
@@ -545,6 +541,7 @@
             document.getElementById('modalTitle').innerText = "Agregar Registro";
             document.getElementById('itemForm').reset();
             document.getElementById('editIndex').value = "";
+            document.getElementById('anioCompra').value = CURRENT_YEAR;
             
             const nextCodeNum = inventoryData.length + 1;
             const suggestedCode = "EQ-2026-" + String(nextCodeNum).padStart(3, '0');
@@ -562,6 +559,7 @@
             document.getElementById('modalTitle').innerText = "Editar Registro";
             document.getElementById('editIndex').value = index;
             document.getElementById('codigoEquipo').value = item.codigo || ("EQ-2026-" + String(index + 1).padStart(3, '0'));
+            document.getElementById('anioCompra').value = item.anioCompra || CURRENT_YEAR;
             document.getElementById('equipo').value = item.equipo || '';
             document.getElementById('marca').value = item.marca || '';
             document.getElementById('modelo').value = item.modelo || '';
@@ -577,6 +575,7 @@
             const newItem = {
                 codigo: document.getElementById('codigoEquipo').value.toUpperCase(),
                 item: index === "" ? inventoryData.length + 1 : inventoryData[index].item,
+                anioCompra: parseInt(document.getElementById('anioCompra').value) || CURRENT_YEAR,
                 equipo: document.getElementById('equipo').value.toUpperCase(),
                 marca: document.getElementById('marca').value.toUpperCase(),
                 modelo: document.getElementById('modelo').value.toUpperCase(),
@@ -704,6 +703,7 @@
             const exportData = inventoryData.map((item, idx) => ({
                 "ITEM": item.item || (idx + 1),
                 "CODIGO EQUIPO": item.codigo || ("EQ-2026-" + String(idx + 1).padStart(3, '0')),
+                "AÑO COMPRA": item.anioCompra || CURRENT_YEAR,
                 "EQUIPO / OBJETO": item.equipo || '',
                 "MARCA": item.marca || '',
                 "MODELO": item.modelo || '',
@@ -716,13 +716,14 @@
 
             worksheet['!cols'] = [
                 { wch: 5 },  
-                { wch: 20 }, 
+                { wch: 18 }, 
+                { wch: 12 }, 
                 { wch: 18 }, 
                 { wch: 14 }, 
-                { wch: 27 }, 
-                { wch: 24 }, 
                 { wch: 25 }, 
-                { wch: 81 }  
+                { wch: 22 }, 
+                { wch: 22 }, 
+                { wch: 60 }  
             ];
 
             const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -785,6 +786,7 @@
                 inventoryData = json.map((row, index) => ({
                     codigo: row["CODIGO EQUIPO"] || row.CODIGO || row.codigo || ("EQ-2026-" + String(index + 1).padStart(3, '0')),
                     item: row["ITEM"] || row.ITEM || row.item || (index + 1),
+                    anioCompra: parseInt(row["AÑO COMPRA"] || row.AÑO || row.anio || CURRENT_YEAR),
                     equipo: row["EQUIPO / OBJETO"] || row.EQUIPO || row.equipo || '',
                     marca: row["MARCA"] || row.marca || '',
                     modelo: row["MODELO"] || row.modelo || '',
