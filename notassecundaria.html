@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión y Consulta de Notas - SIAGIE</title>
+    <title>Sistema Consolidador de Notas SIAGIE - 4 Bimestres</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS (xlsx) CDN -->
@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight">Sistema Consolidado de Notas SIAGIE</h1>
-                    <p class="text-xs text-blue-200">Gestión y Consulta de Evaluaciones por Alumno</p>
+                    <p class="text-xs text-blue-200">Gestión Multibimestral por Alumno (1° a 4° Bimestre)</p>
                 </div>
             </div>
             <div id="badge-files-count" class="hidden bg-blue-600/60 border border-blue-400/30 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-2">
@@ -53,8 +53,9 @@
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                 </div>
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900">Cargar Archivos de Notas (SIAGIE)</h2>
-                    <p class="text-sm text-gray-500 mt-1">Sube hasta 10 archivos Excel de registro de notas (.xlsx) simultáneamente.</p>
+                    <h2 class="text-xl font-semibold text-gray-900">Cargar Registros Excel (SIAGIE)</h2>
+                    <p class="text-sm text-gray-500 mt-1">Sube hasta 36 archivos Excel (.xlsx) simultáneamente.</p>
+                    <p class="text-xs text-brand-600 font-medium mt-1"><i class="fa-solid fa-circle-info mr-1"></i> El sistema lee los datos de la primera hoja de cada Excel para detectar el bimestre, grado y sección.</p>
                 </div>
                 
                 <div class="relative border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-brand-500 transition-colors bg-gray-50/50 cursor-pointer" id="drop-zone">
@@ -62,18 +63,18 @@
                     <div class="space-y-2 pointer-events-none">
                         <i class="fa-solid fa-file-arrow-up text-3xl text-gray-400"></i>
                         <p class="text-sm font-medium text-gray-700">Arrastra tus archivos aquí o <span class="text-brand-600 underline">explora</span></p>
-                        <p class="text-xs text-gray-400">Soporta múltiples archivos Excel (.xlsx)</p>
+                        <p class="text-xs text-gray-400">Soporta selección múltiple de registros de evaluación</p>
                     </div>
                 </div>
 
                 <div id="loading-spinner" class="hidden flex items-center justify-center space-x-2 text-brand-600 font-medium text-sm pt-2">
                     <i class="fa-solid fa-circle-notch fa-spin"></i>
-                    <span>Procesando registros y consolidando información...</span>
+                    <span>Leyendo primera hoja de cada archivo y consolidando notas NL...</span>
                 </div>
             </div>
         </section>
 
-        <!-- Dashboard Section (Hidden by default) -->
+        <!-- Dashboard Section -->
         <section id="section-dashboard" class="hidden space-y-6">
             
             <!-- Controls & Search Bar -->
@@ -82,7 +83,7 @@
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </span>
-                    <input type="text" id="search-input" placeholder="Buscar alumno por nombres o código..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
+                    <input type="text" id="search-input" placeholder="Buscar por alumno, código o grado..." class="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all">
                 </div>
 
                 <div class="flex items-center space-x-3 w-full md:w-auto justify-end flex-wrap gap-2">
@@ -126,7 +127,7 @@
                         <i class="fa-solid fa-school"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Grado / Sección</p>
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Grado y Sección</p>
                         <h3 id="stat-grade-section" class="text-sm font-bold text-gray-900 truncate max-w-[200px]">--</h3>
                     </div>
                 </div>
@@ -145,6 +146,7 @@
                                 <th class="py-3 px-6">#</th>
                                 <th class="py-3 px-6">Cód. Estudiante</th>
                                 <th class="py-3 px-6">Apellidos y Nombres</th>
+                                <th class="py-3 px-6 text-center">Grado y Sección</th>
                                 <th class="py-3 px-6 text-center">Asignaturas</th>
                                 <th class="py-3 px-6 text-center">Acciones</th>
                             </tr>
@@ -160,12 +162,15 @@
 
     <!-- Modal: Student Report Card -->
     <div id="student-modal" class="fixed inset-0 z-50 hidden bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div class="bg-white rounded-3xl shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <!-- Modal Header -->
             <div class="bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-6 py-4 flex justify-between items-center">
                 <div>
-                    <h3 id="modal-student-name" class="text-lg font-bold">Nombre del Estudiante</h3>
-                    <p id="modal-student-code" class="text-xs text-blue-200">Código: --</p>
+                    <div class="flex items-center space-x-3">
+                        <h3 id="modal-student-name" class="text-lg font-bold">Nombre del Estudiante</h3>
+                        <span id="modal-student-grade-badge" class="bg-blue-200/20 text-blue-100 border border-blue-300/30 px-2.5 py-0.5 rounded-full text-xs font-medium">Grado: --</span>
+                    </div>
+                    <p id="modal-student-code" class="text-xs text-blue-200 mt-0.5">Código: --</p>
                 </div>
                 <div class="flex items-center space-x-2">
                     <button onclick="window.print()" title="Imprimir / Guardar PDF" class="bg-white/10 hover:bg-white/20 p-2 rounded-xl text-white text-sm transition-colors">
@@ -177,14 +182,14 @@
                 </div>
             </div>
 
-            <!-- Modal Body (Grades Table Format) -->
+            <!-- Modal Body -->
             <div class="p-6 overflow-y-auto flex-grow space-y-6 bg-gray-50/50">
-                <div class="flex items-center justify-between">
-                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Calificaciones por Asignatura y Competencia</h4>
-                    <span class="text-xs text-gray-500"><i class="fa-solid fa-circle-info text-brand-500 mr-1"></i> Columnas: Competencia | Nota (NL) | Conclusión Descriptiva</span>
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <h4 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Notas NL por Asignatura y Bimestre</h4>
+                    <span class="text-xs text-gray-500"><i class="fa-solid fa-circle-info text-brand-500 mr-1"></i> Visualización de Logro (NL) y Conclusión Descriptiva para cada bimestre</span>
                 </div>
 
-                <div id="modal-subjects-container" class="space-y-4">
+                <div id="modal-subjects-container" class="space-y-6">
                     <!-- Dynamic subject tables -->
                 </div>
             </div>
@@ -237,27 +242,36 @@
         modalCloseFooter.addEventListener('click', closeModal);
         searchInput.addEventListener('input', filterStudents);
 
-        // Check if data exists in localStorage on load
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFromLocalStorage();
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-brand-500', 'bg-blue-50/50');
+            });
         });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-brand-500', 'bg-blue-50/50');
+            });
+        });
+
+        window.addEventListener('DOMContentLoaded', loadFromLocalStorage);
 
         async function handleFilesSelect(e) {
             const files = e.target.files;
-            if (!files.length) return;
+            if (!files || !files.length) return;
 
             loadingSpinner.classList.remove('hidden');
-            globalStudentsMap.clear();
-            globalSubjectsList.clear();
 
             try {
-                const maxFiles = Math.min(files.length, 10);
+                const maxFiles = Math.min(files.length, 36);
                 for (let i = 0; i < maxFiles; i++) {
                     await processExcelFile(files[i]);
                 }
 
                 if (globalStudentsMap.size > 0) {
-                    txtFilesCount.textContent = `${maxFiles} archivo(s) procesados`;
+                    txtFilesCount.textContent = `${maxFiles} archivo(s) procesado(s)`;
                     badgeFilesCount.classList.remove('hidden');
                     sectionUpload.classList.add('hidden');
                     sectionDashboard.classList.remove('hidden');
@@ -273,6 +287,16 @@
             }
         }
 
+        // Detecta el Bimestre inspeccionando el texto de celdas o el nombre de archivo
+        function parseBimesterText(text) {
+            const clean = String(text || '').toLowerCase();
+            if (clean.includes('2do') || clean.includes('segundo') || clean.includes('bimestre 2') || clean.includes('bimestre2') || clean.includes('bim 2') || clean.includes('2°')) return 'Bimestre 2';
+            if (clean.includes('3er') || clean.includes('tercer') || clean.includes('bimestre 3') || clean.includes('bimestre3') || clean.includes('bim 3') || clean.includes('3°')) return 'Bimestre 3';
+            if (clean.includes('4to') || clean.includes('cuarto') || clean.includes('bimestre 4') || clean.includes('bimestre4') || clean.includes('bim 4') || clean.includes('4°')) return 'Bimestre 4';
+            if (clean.includes('1er') || clean.includes('primer') || clean.includes('bimestre 1') || clean.includes('bimestre1') || clean.includes('bim 1') || clean.includes('1°')) return 'Bimestre 1';
+            return null;
+        }
+
         function processExcelFile(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -281,19 +305,42 @@
                         const data = new Uint8Array(e.target.result);
                         const workbook = XLSX.read(data, { type: 'array' });
 
-                        if (workbook.SheetNames.includes('Generalidades')) {
-                            const genSheet = workbook.Sheets['Generalidades'];
-                            const genJson = XLSX.utils.sheet_to_json(genSheet, { header: 1 });
-                            genJson.forEach(row => {
+                        let fileGrade = '';
+                        let fileSection = '';
+                        let detectedBimester = parseBimesterText(file.name);
+
+                        // 1. Escanear la primera hoja para extraer datos de encabezado y bimestre
+                        const firstSheetName = workbook.SheetNames[0];
+                        if (firstSheetName) {
+                            const firstSheet = workbook.Sheets[firstSheetName];
+                            const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                            jsonRows.forEach(row => {
                                 row.forEach((cell, cIdx) => {
-                                    if (cell === 'Institución educativa :') globalGeneralInfo.institution = row[cIdx + 2] || globalGeneralInfo.institution;
-                                    if (cell === 'Grado :') globalGeneralInfo.grade = row[cIdx + 1] || globalGeneralInfo.grade;
-                                    if (cell === 'Sección :') globalGeneralInfo.section = row[cIdx + 1] || globalGeneralInfo.section;
-                                    if (cell === 'Año académico :') globalGeneralInfo.year = row[cIdx + 2] || globalGeneralInfo.year;
+                                    const textCell = String(cell || '').trim();
+                                    const textLower = textCell.toLowerCase();
+
+                                    if (textLower.includes('grado')) {
+                                        const gVal = String(row[cIdx + 1] || row[cIdx + 2] || '').trim();
+                                        if (gVal) { fileGrade = gVal; globalGeneralInfo.grade = fileGrade; }
+                                    }
+                                    if (textLower.includes('sección') || textLower.includes('seccion')) {
+                                        const sVal = String(row[cIdx + 1] || row[cIdx + 2] || '').trim();
+                                        if (sVal) { fileSection = sVal; globalGeneralInfo.section = fileSection; }
+                                    }
+
+                                    // Si aún no se ha detectado el bimestre, probar con las celdas
+                                    if (!detectedBimester) {
+                                        const bMatch = parseBimesterText(textCell) || parseBimesterText(row.join(' '));
+                                        if (bMatch) detectedBimester = bMatch;
+                                    }
                                 });
                             });
                         }
 
+                        if (!detectedBimester) detectedBimester = 'Bimestre 1';
+
+                        // 2. Procesar las pestañas de asignaturas
                         workbook.SheetNames.forEach(sheetName => {
                             if (sheetName === 'Generalidades' || sheetName === 'Parametros') return;
 
@@ -301,17 +348,54 @@
                             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
                             if (rows.length < 3) return;
 
-                            const headerRow1 = rows[1] || [];
-                            const subjectName = sheetName;
+                            const subjectName = sheetName.trim();
                             globalSubjectsList.add(subjectName);
 
-                            let idxCode = headerRow1.findIndex(h => String(h).includes('Cód. Estudiante'));
-                            let idxName = headerRow1.findIndex(h => String(h).includes('Nombres'));
+                            // Detectar fila de cabecera (contiene 'Cód. Estudiante' o 'Nombres')
+                            let headerRowIndex = -1;
+                            for (let r = 0; r < Math.min(rows.length, 6); r++) {
+                                const rowStr = JSON.stringify(rows[r] || []);
+                                if (rowStr.includes('Cód. Estudiante') || rowStr.includes('Nombres')) {
+                                    headerRowIndex = r;
+                                    break;
+                                }
+                            }
+
+                            if (headerRowIndex === -1) headerRowIndex = 1;
+
+                            const headerRow = rows[headerRowIndex] || [];
+                            let idxCode = headerRow.findIndex(h => String(h || '').includes('Cód. Estudiante'));
+                            let idxName = headerRow.findIndex(h => String(h || '').includes('Nombres'));
 
                             if (idxCode === -1) idxCode = 1;
                             if (idxName === -1) idxName = 2;
 
-                            for (let r = 2; r < rows.length; r++) {
+                            // Localizar todas las columnas NL
+                            const nlColumns = [];
+                            for (let c = idxName + 1; c < headerRow.length; c++) {
+                                const headText = String(headerRow[c] || '').trim().toUpperCase();
+                                if (headText === 'NL' || headText.includes('LOGRO') || headText === 'N.L.') {
+                                    nlColumns.push(c);
+                                }
+                            }
+
+                            // Fallback: Si no dice "NL" en el encabezado, busca columnas con notas cualitativas (AD, A, B, C)
+                            if (nlColumns.length === 0) {
+                                for (let c = idxName + 1; c < headerRow.length; c++) {
+                                    for (let r = headerRowIndex + 1; r < Math.min(rows.length, headerRowIndex + 10); r++) {
+                                        const cellVal = String(rows[r]?.[c] || '').trim().toUpperCase();
+                                        if (['AD', 'A', 'B', 'C'].includes(cellVal)) {
+                                            nlColumns.push(c);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            const fullGradeSection = fileGrade ? (fileSection ? `${fileGrade} - ${fileSection}` : fileGrade) : '--';
+
+                            // Extraer alumnos y sus notas NL por competencia
+                            for (let r = headerRowIndex + 1; r < rows.length; r++) {
                                 const row = rows[r];
                                 if (!row || row.length <= idxCode) continue;
 
@@ -325,27 +409,40 @@
                                         id: row[0] || '',
                                         code: studentCode,
                                         name: studentName,
+                                        gradeSection: fullGradeSection,
                                         subjects: {}
                                     });
                                 }
 
                                 const studentObj = globalStudentsMap.get(studentCode);
-                                
-                                const competencies = [];
-                                for (let c = idxName + 1; c < headerRow1.length; c++) {
-                                    const h1Text = String(headerRow1[c] || '').trim();
-                                    if (h1Text === 'NL') {
-                                        const gradeVal = String(row[c] || '-').trim();
-                                        const descVal = String(row[c + 1] || '').trim();
-                                        competencies.push({
-                                            competencyIndex: competencies.length + 1,
-                                            grade: gradeVal !== '' && gradeVal !== 'undefined' ? gradeVal : '-',
-                                            description: descVal !== 'undefined' && descVal !== '' ? descVal : null
-                                        });
-                                    }
+                                if (fullGradeSection !== '--' && studentObj.gradeSection === '--') {
+                                    studentObj.gradeSection = fullGradeSection;
                                 }
 
-                                studentObj.subjects[subjectName] = competencies;
+                                if (!studentObj.subjects[subjectName]) {
+                                    studentObj.subjects[subjectName] = {};
+                                }
+
+                                nlColumns.forEach((colIdx, compIdx) => {
+                                    const rawGrade = row[colIdx];
+                                    const rawDesc = row[colIdx + 1];
+
+                                    const gradeVal = rawGrade !== undefined && rawGrade !== null && String(rawGrade).trim() !== '' ? String(rawGrade).trim() : '-';
+                                    const descVal = rawDesc !== undefined && rawDesc !== null && String(rawDesc).trim() !== '' ? String(rawDesc).trim() : null;
+
+                                    const compKey = `Competencia ${compIdx + 1}`;
+                                    if (!studentObj.subjects[subjectName][compKey]) {
+                                        studentObj.subjects[subjectName][compKey] = {
+                                            index: compIdx + 1,
+                                            bimesters: {}
+                                        };
+                                    }
+
+                                    studentObj.subjects[subjectName][compKey].bimesters[detectedBimester] = {
+                                        grade: gradeVal,
+                                        description: descVal
+                                    };
+                                });
                             }
                         });
 
@@ -363,17 +460,22 @@
                 alert('No hay datos para guardar.');
                 return;
             }
-            const dataToSave = {
-                students: Array.from(globalStudentsMap.entries()),
-                subjects: Array.from(globalSubjectsList),
-                generalInfo: globalGeneralInfo
-            };
-            localStorage.setItem('siagie_saved_data', JSON.stringify(dataToSave));
-            alert('¡Datos guardados exitosamente en el navegador!');
+            try {
+                const dataToSave = {
+                    students: Array.from(globalStudentsMap.entries()),
+                    subjects: Array.from(globalSubjectsList),
+                    generalInfo: globalGeneralInfo
+                };
+                localStorage.setItem('siagie_saved_data_v5', JSON.stringify(dataToSave));
+                alert('¡Datos guardados exitosamente en el navegador!');
+            } catch (e) {
+                console.error(e);
+                alert('No se pudo guardar la información. La memoria del navegador está llena.');
+            }
         }
 
         function loadFromLocalStorage() {
-            const saved = localStorage.getItem('siagie_saved_data');
+            const saved = localStorage.getItem('siagie_saved_data_v5');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -389,14 +491,14 @@
                         renderDashboard();
                     }
                 } catch (e) {
-                    console.error('Error loading local storage', e);
+                    console.error('Error al cargar datos desde LocalStorage', e);
                 }
             }
         }
 
         function clearLocalStorageData() {
             if (confirm('¿Estás seguro de eliminar todos los datos guardados en el navegador y reiniciar el sistema?')) {
-                localStorage.removeItem('siagie_saved_data');
+                localStorage.removeItem('siagie_saved_data_v5');
                 resetApp();
                 alert('Datos eliminados correctamente.');
             }
@@ -406,8 +508,7 @@
             event.stopPropagation();
             if (confirm(`¿Deseas eliminar al alumno con código ${code}?`)) {
                 globalStudentsMap.delete(code);
-                // Update localStorage automatically if saved
-                if (localStorage.getItem('siagie_saved_data')) {
+                if (localStorage.getItem('siagie_saved_data_v5')) {
                     saveToLocalStorage();
                 }
                 renderDashboard();
@@ -417,7 +518,7 @@
         function renderDashboard() {
             statTotalStudents.textContent = globalStudentsMap.size;
             statTotalSubjects.textContent = globalSubjectsList.size;
-            statGradeSection.textContent = `${globalGeneralInfo.grade || 'QUINTO'} - ${globalGeneralInfo.section || 'ÚNICA'}`;
+            statGradeSection.textContent = `${globalGeneralInfo.grade || '---'} - ${globalGeneralInfo.section || '---'}`;
 
             displayStudents(Array.from(globalStudentsMap.values()));
         }
@@ -427,7 +528,7 @@
             tableCount.textContent = `Mostrando ${studentsList.length} alumno(s)`;
 
             if (studentsList.length === 0) {
-                studentsTableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-gray-400">No se encontraron estudiantes.</td></tr>`;
+                studentsTableBody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-gray-400">No se encontraron estudiantes.</td></tr>`;
                 return;
             }
 
@@ -440,6 +541,11 @@
                     <td class="py-3 px-6 text-gray-500 font-medium">${index + 1}</td>
                     <td class="py-3 px-6 font-mono text-xs text-gray-600">${st.code}</td>
                     <td class="py-3 px-6 font-semibold text-gray-900">${st.name}</td>
+                    <td class="py-3 px-6 text-center">
+                        <span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg text-xs font-medium border border-indigo-100">
+                            ${st.gradeSection || '--'}
+                        </span>
+                    </td>
                     <td class="py-3 px-6 text-center"><span class="bg-blue-50 text-brand-700 px-2.5 py-1 rounded-full text-xs font-semibold">${Object.keys(st.subjects).length} asignaturas</span></td>
                     <td class="py-3 px-6 text-center flex items-center justify-center space-x-2">
                         <button onclick="openStudentModal('${st.code}')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-medium transition-colors shadow-sm flex items-center space-x-1">
@@ -459,7 +565,9 @@
             const query = searchInput.value.toLowerCase().trim();
             const allStudents = Array.from(globalStudentsMap.values());
             const filtered = allStudents.filter(st => 
-                st.name.toLowerCase().includes(query) || st.code.toLowerCase().includes(query)
+                st.name.toLowerCase().includes(query) || 
+                st.code.toLowerCase().includes(query) ||
+                (st.gradeSection && st.gradeSection.toLowerCase().includes(query))
             );
             displayStudents(filtered);
         }
@@ -470,6 +578,7 @@
 
             document.getElementById('modal-student-name').textContent = st.name;
             document.getElementById('modal-student-code').textContent = `Código de Estudiante: ${st.code}`;
+            document.getElementById('modal-student-grade-badge').textContent = `Grado y Secc: ${st.gradeSection || '--'}`;
 
             const container = document.getElementById('modal-subjects-container');
             container.innerHTML = '';
@@ -477,33 +586,37 @@
             if (Object.keys(st.subjects).length === 0) {
                 container.innerHTML = `<p class="text-center text-gray-400 py-6">No hay registros de notas disponibles para este alumno.</p>`;
             } else {
-                for (const [subj, comps] of Object.entries(st.subjects)) {
+                for (const [subj, competenciesObj] of Object.entries(st.subjects)) {
                     const card = document.createElement('div');
                     card.className = 'bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden';
                     
                     let rowsHtml = '';
-                    comps.forEach(comp => {
-                        let gradeColor = 'bg-gray-100 text-gray-800';
-                        if (comp.grade === 'AD') gradeColor = 'bg-purple-100 text-purple-800 font-bold';
-                        else if (comp.grade === 'A') gradeColor = 'bg-blue-100 text-blue-800 font-bold';
-                        else if (comp.grade === 'B') gradeColor = 'bg-amber-100 text-amber-800 font-bold';
-                        else if (comp.grade === 'C') gradeColor = 'bg-rose-100 text-rose-800 font-bold ring-2 ring-rose-400';
-
-                        const isC = comp.grade === 'C';
-                        const descText = comp.description ? comp.description : '<span class="text-gray-400 italic">Sin conclusión descriptiva registrada.</span>';
+                    for (const [compKey, compData] of Object.entries(competenciesObj)) {
+                        const bim1 = compData.bimesters['Bimestre 1'] || { grade: '-', description: null };
+                        const bim2 = compData.bimesters['Bimestre 2'] || { grade: '-', description: null };
+                        const bim3 = compData.bimesters['Bimestre 3'] || { grade: '-', description: null };
+                        const bim4 = compData.bimesters['Bimestre 4'] || { grade: '-', description: null };
 
                         rowsHtml += `
-                            <tr class="border-b border-gray-100 hover:bg-gray-50/50">
-                                <td class="py-3 px-4 font-semibold text-gray-700 text-xs w-36 whitespace-nowrap">Competencia ${comp.competencyIndex}</td>
-                                <td class="py-3 px-4 text-center w-24">
-                                    <span class="inline-block px-3 py-1 rounded-lg text-xs ${gradeColor}">${comp.grade}</span>
+                            <tr class="border-b border-gray-100 hover:bg-gray-50/50 align-top">
+                                <td class="py-3 px-4 font-semibold text-gray-700 text-xs whitespace-nowrap w-36">
+                                    Competencia ${compData.index}
                                 </td>
-                                <td class="py-3 px-4 text-xs ${isC ? 'text-rose-900 font-medium bg-rose-50/60' : 'text-gray-600'}">
-                                    ${descText}
+                                <td class="py-3 px-3 text-center w-28">
+                                    ${renderGradeCell(bim1)}
+                                </td>
+                                <td class="py-3 px-3 text-center w-28">
+                                    ${renderGradeCell(bim2)}
+                                </td>
+                                <td class="py-3 px-3 text-center w-28">
+                                    ${renderGradeCell(bim3)}
+                                </td>
+                                <td class="py-3 px-3 text-center w-28">
+                                    ${renderGradeCell(bim4)}
                                 </td>
                             </tr>
                         `;
-                    });
+                    }
 
                     card.innerHTML = `
                         <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
@@ -517,8 +630,10 @@
                                 <thead>
                                     <tr class="bg-gray-50/70 text-gray-500 text-[11px] font-semibold uppercase border-b border-gray-200">
                                         <th class="py-2.5 px-4">Competencia</th>
-                                        <th class="py-2.5 px-4 text-center">Nota (NL)</th>
-                                        <th class="py-2.5 px-4">Conclusión Descriptiva</th>
+                                        <th class="py-2.5 px-3 text-center">1° Bimestre</th>
+                                        <th class="py-2.5 px-3 text-center">2° Bimestre</th>
+                                        <th class="py-2.5 px-3 text-center">3° Bimestre</th>
+                                        <th class="py-2.5 px-3 text-center">4° Bimestre</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -534,6 +649,23 @@
             studentModal.classList.remove('hidden');
         }
 
+        function renderGradeCell(bimData) {
+            let gradeColor = 'bg-gray-100 text-gray-800';
+            if (bimData.grade === 'AD') gradeColor = 'bg-purple-100 text-purple-800 font-bold';
+            else if (bimData.grade === 'A') gradeColor = 'bg-blue-100 text-blue-800 font-bold';
+            else if (bimData.grade === 'B') gradeColor = 'bg-amber-100 text-amber-800 font-bold';
+            else if (bimData.grade === 'C') gradeColor = 'bg-rose-100 text-rose-800 font-bold ring-1 ring-rose-400';
+
+            const descTooltip = bimData.description ? `<p class="text-[10px] text-gray-500 mt-1 italic leading-tight max-w-[150px] mx-auto">${bimData.description}</p>` : `<p class="text-[10px] text-gray-300 mt-1 italic">S/N</p>`;
+
+            return `
+                <div class="flex flex-col items-center">
+                    <span class="inline-block px-2.5 py-0.5 rounded-md text-xs ${gradeColor}">${bimData.grade}</span>
+                    ${descTooltip}
+                </div>
+            `;
+        }
+
         function closeModal() {
             studentModal.classList.add('hidden');
         }
@@ -542,6 +674,7 @@
             fileInput.value = '';
             globalStudentsMap.clear();
             globalSubjectsList.clear();
+            globalGeneralInfo = { institution: '', grade: '', section: '', year: '' };
             sectionDashboard.classList.add('hidden');
             sectionUpload.classList.remove('hidden');
             badgeFilesCount.classList.add('hidden');
